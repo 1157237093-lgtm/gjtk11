@@ -772,6 +772,24 @@ select {
   margin-top: 12px;
 }
 
+.per-option-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.per-option-grid,
+.diagnosis-chip-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.per-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .empty-state {
   padding: 28px;
   text-align: center;

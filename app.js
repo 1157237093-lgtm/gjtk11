@@ -78660,6 +78660,8 @@ ${text.slice(0, 2e3)}`;
   var CONFIDENCE_OPTIONS = ["\u786E\u5B9A", "\u4E0D\u786E\u5B9A", "\u8499\u7684", "\u4E24\u4E2A\u9009\u9879\u7EA0\u7ED3", "\u591A\u4E2A\u9009\u9879\u7EA0\u7ED3"];
   var RISK_CONFIDENCE_VALUES = ["\u4E0D\u786E\u5B9A", "\u8499\u7684", "\u4E24\u4E2A\u9009\u9879\u7EA0\u7ED3", "\u591A\u4E2A\u9009\u9879\u7EA0\u7ED3"];
   var GUESS_REASONS = ["\u8499\u7684", "\u731C\u7684", "\u4E0D\u786E\u5B9A", "\u4E24\u4E2A\u9009\u9879\u7EA0\u7ED3", "\u591A\u4E2A\u9009\u9879\u7EA0\u7ED3"];
+  var TANGLED_CONFIDENCE_VALUES = ["\u4E24\u4E2A\u9009\u9879\u7EA0\u7ED3", "\u591A\u4E2A\u9009\u9879\u7EA0\u7ED3"];
+  var PER_OPTION_JUDGEMENT_VALUES = ["\u5FC5\u9009", "\u6392\u9664", "\u4E0D\u786E\u5B9A"];
   var RECITATION_CATEGORIES = [
     "\u95EE\u6CD5\u7C7B",
     "\u6CBB\u7406\u7C7B",
@@ -79055,6 +79057,7 @@ ${text.slice(0, 2e3)}`;
     });
     document.getElementById("submit-exam").addEventListener("click", () => {
       const questions = getFilteredPaperQuestions();
+      syncRenderedQuestionTrainingFields(elements.paperQuestionList, questions);
       if (!questions.length) {
         flashMessage("\u5F53\u524D\u7B5B\u9009\u4E0B\u6CA1\u6709\u9898\u76EE\u53EF\u4EA4\u5377\u3002", true);
         return;
@@ -79071,6 +79074,16 @@ ${text.slice(0, 2e3)}`;
       if (missingConfidence.length) {
         flashMessage(`\u8FD8\u6709 ${missingConfidence.length} \u9053\u5DF2\u4F5C\u7B54\u9898\u672A\u9009\u62E9\u4FE1\u5FC3\u72B6\u6001\uFF0C\u4E0D\u80FD\u63D0\u4EA4\u3002`, true);
         return;
+      }
+      if (state.paperMode !== "exam") {
+        const missingTangledTraining = answeredQuestions.filter((question) => getMissingTangledTrainingFields(question).length);
+        if (missingTangledTraining.length) {
+          flashMessage(
+            `\u8FD8\u6709 ${missingTangledTraining.length} \u9053\u7EA0\u7ED3\u9898\u672A\u8865\u5168\u4E8C\u9009\u4E00\u8BAD\u7EC3\u5B57\u6BB5\uFF0C\u4E0D\u80FD\u5BF9\u7B54\u6848\u3002`,
+            true
+          );
+          return;
+        }
       }
       let gradedCount = 0;
       let autoCardCount = 0;
@@ -79736,6 +79749,7 @@ ${text.slice(0, 2e3)}`;
     const recitationCards = getRecitationCards();
     const abnormalItems = getAbnormalItems();
     const todayText = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const scoreDiagnosisStats = getScoreDiagnosisStats(state.store.questions);
     elements.globalSummary.innerHTML = summaryCardsMarkup([
       { label: "\u671F\u6B21\u6570", value: papers.length },
       { label: "\u603B\u9898\u91CF", value: state.store.questions.length },
@@ -79769,7 +79783,14 @@ ${text.slice(0, 2e3)}`;
       { label: "\u9009\u9879\u8FB9\u754C\u4E0D\u6E05", value: countQuestionsByRiskReason(state.store.questions, "\u9009\u9879\u8FB9\u754C\u4E0D\u6E05") },
       { label: "\u4E8C\u5237\u4ECD\u4E0D\u786E\u5B9A", value: state.store.questions.filter((question) => question.secondReviewStillUncertain).length },
       { label: "\u6700\u591A\u72B9\u8C6B\u7EC4\u5408", value: getTopHesitationCombo(state.store.questions) },
-      { label: "\u9AD8\u9891\u9519\u56E0 Top5", value: topRiskReasonText(state.store.questions) }
+      { label: "\u9AD8\u9891\u9519\u56E0 Top5", value: topRiskReasonText(state.store.questions) },
+      { label: "\u771F\u5B9E\u6B63\u786E\u7387", value: scoreDiagnosisStats.realAccuracyText },
+      { label: "\u8868\u9762\u6B63\u786E\u7387", value: scoreDiagnosisStats.surfaceAccuracyText },
+      { label: "\u4E8C\u9009\u4E00\u9519\u8BEF\u7387", value: scoreDiagnosisStats.tangledErrorRateText },
+      { label: "\u591A\u9009\u6F0F\u9009\u6570", value: scoreDiagnosisStats.multiMissedCount },
+      { label: "\u591A\u9009\u9519\u9009\u6570", value: scoreDiagnosisStats.multiOverSelectedCount },
+      { label: "Top5 \u63D0\u5206\u9519\u56E0", value: scoreDiagnosisStats.topPrimaryWrongReasonsText },
+      { label: "Top10 \u6613\u6DF7\u6807\u7B7E", value: scoreDiagnosisStats.topSecondaryWrongTagsText }
     ]);
     renderGlobalTimingPanel(globalTimingStats);
     renderTodayRecitationPanel();
@@ -80530,9 +80551,18 @@ ${text.slice(0, 2e3)}`;
         }
         updateConfidenceFromDom(question, container);
         updateHesitationOptionsFromDom(question, container);
+        updateScoreTrainingFieldsFromDom(question, container);
+        updatePerOptionJudgementFromDom(question, container);
         if (!question.confidenceStatus) {
           flashMessage("\u8BF7\u5148\u9009\u62E9\u4FE1\u5FC3\u72B6\u6001\u3002", true);
           return;
+        }
+        if (shouldRequireTangledTrainingBeforeAnswer(mode, isWrongBook, isGuessBook, isRiskBook)) {
+          const missingTangledTraining = getMissingTangledTrainingFields(question);
+          if (missingTangledTraining.length) {
+            flashMessage(`\u8BF7\u5148\u8865\u5168\u4E8C\u9009\u4E00\u8BAD\u7EC3\u5B57\u6BB5\uFF1A${missingTangledTraining.join("\u3001")}\u3002`, true);
+            return;
+          }
         }
         question.userAnswer = selectedAnswer;
         markAnswered(question);
@@ -80714,6 +80744,36 @@ ${text.slice(0, 2e3)}`;
         }
       });
     });
+    container.querySelectorAll("[data-score-training-field]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const question = questionMap.get(input.dataset.questionKey);
+        if (!question) {
+          return;
+        }
+        updateScoreTrainingFieldsFromDom(question, container);
+        persistReviewMetadata(question);
+        if (isGradedQuestion(question) && hasUserAnswer(question)) {
+          gradeQuestion(question);
+        }
+        persistStore();
+        renderApp();
+      });
+    });
+    container.querySelectorAll("[data-per-option-judgement]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const question = questionMap.get(input.dataset.questionKey);
+        if (!question) {
+          return;
+        }
+        updatePerOptionJudgementFromDom(question, container);
+        persistReviewMetadata(question);
+        if (isGradedQuestion(question) && hasUserAnswer(question)) {
+          gradeQuestion(question);
+        }
+        persistStore();
+        renderApp();
+      });
+    });
     container.querySelectorAll("[data-review-field]").forEach((textarea) => {
       textarea.addEventListener("change", () => {
         const question = questionMap.get(textarea.dataset.questionKey);
@@ -80744,6 +80804,23 @@ ${text.slice(0, 2e3)}`;
         persistStore();
         renderApp();
       });
+    });
+  }
+  function syncRenderedQuestionTrainingFields(container, questions) {
+    if (!container) {
+      return;
+    }
+    const questionMap = new Map(questions.map((question) => [questionKey(question), question]));
+    container.querySelectorAll("[data-question-card]").forEach((card) => {
+      const question = questionMap.get(card.dataset.questionKey);
+      if (!question) {
+        return;
+      }
+      updateConfidenceFromDom(question, container);
+      updateHesitationOptionsFromDom(question, container);
+      updateScoreTrainingFieldsFromDom(question, container);
+      updatePerOptionJudgementFromDom(question, container);
+      persistReviewMetadata(question);
     });
   }
   function importPaper(payload) {
@@ -80954,11 +81031,28 @@ ${text.slice(0, 2e3)}`;
       maxScore: null,
       isWrong: false,
       wrongReason: null,
+      primaryWrongReason: "",
+      secondaryWrongTags: [],
       isGuessed: false,
       guessReason: null,
       isHighRisk: false,
       confidenceStatus: null,
-      hesitationOptions: [],
+      hesitationOptions: "",
+      decisiveKeyword: "",
+      wrongThinking: "",
+      nextRule: "",
+      selectedVsCorrectDiff: "",
+      eachOptionReason: "",
+      eliminatedOption: "",
+      eliminationReason: "",
+      perOptionJudgement: {},
+      missedOptions: [],
+      overSelectedOptions: [],
+      multiSelectErrorType: "",
+      learningDiagnosis: "",
+      retestPriority: "",
+      reviewDueAt: "",
+      recitationCardId: "",
       riskReasons: [],
       reviewNotes: normalizeReviewNotes(null),
       riskCertainCorrectStreak: 0,
@@ -81260,9 +81354,11 @@ ${text.slice(0, 2e3)}`;
         updatedAt: (/* @__PURE__ */ new Date()).toISOString()
       });
       upsertRecitationCard(merged);
+      question.recitationCardId = merged.cardId || "";
       return { card: merged, created: false };
     }
     upsertRecitationCard(incoming);
+    question.recitationCardId = incoming.cardId || "";
     return { card: incoming, created: true };
   }
   function findDuplicateRecitationCardForQuestion(question) {
@@ -82418,6 +82514,36 @@ ${card.typicalMaterial}
     ).filter((entry) => entry.label !== "\u672A\u6807\u8BB0");
     return entries.length ? entries.map((entry) => `${entry.label}${entry.count}`).join(" / ") : "--";
   }
+  function getScoreDiagnosisStats(questions) {
+    const answered = questions.filter(hasUserAnswer);
+    const graded = answered.filter(isGradedQuestion);
+    const surfaceCorrect = graded.filter((question) => question.status === "correct");
+    const sureCorrect = surfaceCorrect.filter((question) => question.confidenceStatus === "\u786E\u5B9A" && !question.isGuessed);
+    const tangled = graded.filter(isTangledQuestion);
+    const tangledWrong = tangled.filter((question) => question.status === "wrong");
+    const multi = graded.filter(isMultipleQuestion);
+    const multiMissedCount = multi.reduce((sum, question) => sum + normalizeAnswerToArray(question.missedOptions).length, 0);
+    const multiOverSelectedCount = multi.reduce((sum, question) => sum + normalizeAnswerToArray(question.overSelectedOptions).length, 0);
+    const primaryReasons = topCountEntries(
+      questions.filter((question) => question.isWrong || question.isHighRisk),
+      (question) => question.primaryWrongReason || question.wrongReason || "\u672A\u6807\u8BB0",
+      5
+    ).filter((entry) => entry.label !== "\u672A\u6807\u8BB0");
+    const secondaryTags = topCountEntries(
+      questions.flatMap((question) => normalizeStringArray(question.secondaryWrongTags).map((tag) => ({ tag }))),
+      (item) => item.tag,
+      10
+    );
+    return {
+      realAccuracyText: answered.length ? `${Math.round(sureCorrect.length / answered.length * 100)}%` : "--",
+      surfaceAccuracyText: answered.length ? `${Math.round(surfaceCorrect.length / answered.length * 100)}%` : "--",
+      tangledErrorRateText: tangled.length ? `${Math.round(tangledWrong.length / tangled.length * 100)}%` : "--",
+      multiMissedCount,
+      multiOverSelectedCount,
+      topPrimaryWrongReasonsText: primaryReasons.length ? primaryReasons.map((entry) => `${entry.label}${entry.count}`).join(" / ") : "--",
+      topSecondaryWrongTagsText: secondaryTags.length ? secondaryTags.map((entry) => `${entry.label}${entry.count}`).join(" / ") : "--"
+    };
+  }
   function getTopHesitationCombo(questions) {
     const entries = topCountEntries(
       questions.filter((question) => getHesitationCombo(question)),
@@ -82429,6 +82555,24 @@ ${card.typicalMaterial}
   function getHesitationCombo(question) {
     const options = normalizeAnswerToArray(question.hesitationOptions);
     return options.length ? options.join("/") : "";
+  }
+  function isTangledQuestion(question) {
+    return TANGLED_CONFIDENCE_VALUES.includes(question.confidenceStatus);
+  }
+  function getMissingTangledTrainingFields(question) {
+    if (!isTangledQuestion(question)) {
+      return [];
+    }
+    return [
+      ["hesitationOptions", "\u7EA0\u7ED3\u9009\u9879", normalizeAnswerToArray(question.hesitationOptions).length],
+      ["eachOptionReason", "\u5404\u9009\u9879\u7406\u7531", String(question.eachOptionReason || "").trim()],
+      ["decisiveKeyword", "\u5B9A\u80DC\u5173\u952E\u8BCD", String(question.decisiveKeyword || "").trim()],
+      ["eliminatedOption", "\u6DD8\u6C70\u9879", normalizeAnswerToArray(question.eliminatedOption).length],
+      ["eliminationReason", "\u6DD8\u6C70\u7406\u7531", String(question.eliminationReason || "").trim()]
+    ].filter(([, , value]) => !value).map(([, label]) => label);
+  }
+  function shouldRequireTangledTrainingBeforeAnswer(mode, isWrongBook, isGuessBook, isRiskBook) {
+    return mode !== "exam" && !isGuessBook && (isWrongBook || isRiskBook || state.currentView === "paper");
   }
   function isCorrectButUncertain(question) {
     return question.status === "correct" && question.confidenceStatus === "\u4E0D\u786E\u5B9A";
@@ -82778,6 +82922,7 @@ ${card.typicalMaterial}
     }).join("")}
       </div>
       ${confidencePanelMarkup(question)}
+      ${multiple ? perOptionJudgementMarkup(question) : ""}
       <div class="question-actions">
         <button class="secondary" data-submit-question="true" data-question-key="${escapeHtmlAttr(key)}">
           ${mode === "exam" ? "\u4FDD\u5B58\u4F5C\u7B54" : isWrongBook || isGuessBook || isRiskBook ? "\u63D0\u4EA4\u91CD\u5237" : "\u63D0\u4EA4\u5224\u9898"}
@@ -82803,7 +82948,7 @@ ${card.typicalMaterial}
             <div class="question-feedback" data-kind="${feedbackKind}">
               ${question.status === "correct" ? "\u56DE\u7B54\u6B63\u786E" : "\u56DE\u7B54\u9519\u8BEF"} \xB7 \u4F60\u7684\u7B54\u6848\uFF1A${escapeHtml(
       formatAnswer(question.userAnswer) || "\u672A\u4F5C\u7B54"
-    )}${question.correctAnswer ? ` \xB7 \u6B63\u786E\u7B54\u6848\uFF1A${escapeHtml(formatAnswer(question.correctAnswer))}` : " \xB7 \u5F53\u524D\u5C1A\u672A\u5BFC\u5165\u7B54\u6848"}${question.maxScore ? ` \xB7 \u5F97\u5206\uFF1A${escapeHtml(formatScore(question.score))}/${escapeHtml(formatScore(question.maxScore))}` : ""}${question.confidenceStatus ? ` \xB7 \u4FE1\u5FC3\uFF1A${escapeHtml(question.confidenceStatus)}` : ""}${getHesitationCombo(question) ? ` \xB7 \u72B9\u8C6B\u9879\uFF1A${escapeHtml(getHesitationCombo(question))}` : ""}
+    )}${question.correctAnswer ? ` \xB7 \u6B63\u786E\u7B54\u6848\uFF1A${escapeHtml(formatAnswer(question.correctAnswer))}` : " \xB7 \u5F53\u524D\u5C1A\u672A\u5BFC\u5165\u7B54\u6848"}${question.maxScore ? ` \xB7 \u5F97\u5206\uFF1A${escapeHtml(formatScore(question.score))}/${escapeHtml(formatScore(question.maxScore))}` : ""}${question.confidenceStatus ? ` \xB7 \u4FE1\u5FC3\uFF1A${escapeHtml(question.confidenceStatus)}` : ""}${getHesitationCombo(question) ? ` \xB7 \u72B9\u8C6B\u9879\uFF1A${escapeHtml(getHesitationCombo(question))}` : ""}${question.selectedVsCorrectDiff ? ` \xB7 \u9009\u62E9\u5DEE\u5F02\uFF1A${escapeHtml(question.selectedVsCorrectDiff)}` : ""}${question.multiSelectErrorType ? ` \xB7 \u591A\u9009\u8BCA\u65AD\uFF1A${escapeHtml(question.multiSelectErrorType)}` : ""}
             </div>
           ` : ""}
       ${showCorrectAnswer && question.explanation ? `<div class="question-explanation">\u89E3\u6790\uFF1A${escapeHtml(question.explanation)}</div>` : ""}
@@ -82829,6 +82974,7 @@ ${card.typicalMaterial}
   function confidencePanelMarkup(question) {
     const key = questionKey(question);
     const hesitationOptions = normalizeAnswerToArray(question.hesitationOptions);
+    const missingTangledTraining = getMissingTangledTrainingFields(question);
     return `
     <div class="wrong-reason-panel">
       <label>
@@ -82857,6 +83003,61 @@ ${card.typicalMaterial}
           `
     ).join("")}
       </div>
+      ${isTangledQuestion(question) && missingTangledTraining.length ? `<p class="muted">\u7EA0\u7ED3\u9898\u590D\u76D8\u5F85\u8865\u5168\uFF1A${escapeHtml(missingTangledTraining.join("\u3001"))}</p>` : ""}
+      <div class="review-grid">
+        <label>
+          \u5404\u9009\u9879\u7406\u7531
+          <textarea rows="2" data-score-training-field="eachOptionReason" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.eachOptionReason || "")}</textarea>
+        </label>
+        <label>
+          \u5B9A\u80DC\u5173\u952E\u8BCD
+          <textarea rows="2" data-score-training-field="decisiveKeyword" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.decisiveKeyword || "")}</textarea>
+        </label>
+        <label>
+          \u6DD8\u6C70\u9879
+          <input data-score-training-field="eliminatedOption" data-question-key="${escapeHtmlAttr(key)}" value="${escapeHtmlAttr(formatAnswer(question.eliminatedOption) || "")}" />
+        </label>
+        <label>
+          \u6DD8\u6C70\u7406\u7531
+          <textarea rows="2" data-score-training-field="eliminationReason" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.eliminationReason || "")}</textarea>
+        </label>
+      </div>
+    </div>
+  `;
+  }
+  function perOptionJudgementMarkup(question) {
+    const key = questionKey(question);
+    const judgement = normalizePerOptionJudgement(question.perOptionJudgement);
+    return `
+    <div class="wrong-reason-panel per-option-panel">
+      <div class="insight-title">\u591A\u9009\u9010\u9879\u5224\u65AD</div>
+      <div class="per-option-grid">
+        ${question.options.map((option) => {
+      const optionValue = judgement[option.label] || "";
+      return `
+              <div class="per-option-row">
+                <span class="option-badge">${escapeHtml(option.label)}</span>
+                ${PER_OPTION_JUDGEMENT_VALUES.map(
+        (value) => `
+                    <label class="metric-pill">
+                      <input
+                        type="radio"
+                        name="per-option-${escapeHtmlAttr(key)}-${escapeHtmlAttr(option.label)}"
+                        value="${escapeHtmlAttr(value)}"
+                        data-per-option-judgement="true"
+                        data-option-label="${escapeHtmlAttr(option.label)}"
+                        data-question-key="${escapeHtmlAttr(key)}"
+                        ${optionValue === value ? "checked" : ""}
+                      />
+                      ${escapeHtml(value)}
+                    </label>
+                  `
+      ).join("")}
+              </div>
+            `;
+    }).join("")}
+      </div>
+      <p class="muted">\u9010\u9879\u5224\u65AD\u53EA\u7528\u4E8E\u8BAD\u7EC3\u8BCA\u65AD\uFF0C\u4E0D\u53C2\u4E0E\u6700\u7EC8\u5224\u9898\u3002</p>
     </div>
   `;
   }
@@ -82884,6 +83085,10 @@ ${card.typicalMaterial}
     ).join("")}
       </div>
       <div class="review-grid">
+        <label>
+          \u6613\u6DF7\u6807\u7B7E
+          <input data-score-training-field="secondaryWrongTags" data-question-key="${escapeHtmlAttr(key)}" value="${escapeHtmlAttr(normalizeStringArray(question.secondaryWrongTags).join("\uFF0C"))}" />
+        </label>
         ${REVIEW_PROMPTS.map(
       ([field, label]) => `
             <label>
@@ -82892,7 +83097,36 @@ ${card.typicalMaterial}
             </label>
           `
     ).join("")}
+        <label>
+          \u9519\u8BEF\u601D\u8DEF
+          <textarea rows="2" data-score-training-field="wrongThinking" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.wrongThinking || "")}</textarea>
+        </label>
+        <label>
+          \u4E0B\u6B21\u89C4\u5219
+          <textarea rows="2" data-score-training-field="nextRule" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.nextRule || "")}</textarea>
+        </label>
       </div>
+      ${scoreDiagnosisPanelMarkup(question)}
+    </div>
+  `;
+  }
+  function scoreDiagnosisPanelMarkup(question) {
+    const rows = [
+      ["\u9009\u62E9\u5DEE\u5F02", question.selectedVsCorrectDiff],
+      ["\u591A\u9009\u8BCA\u65AD", question.multiSelectErrorType],
+      ["\u6F0F\u9009", formatAnswer(question.missedOptions)],
+      ["\u9519\u9009", formatAnswer(question.overSelectedOptions)],
+      ["\u5B66\u4E60\u8BCA\u65AD", question.learningDiagnosis],
+      ["\u590D\u6D4B\u4F18\u5148\u7EA7", question.retestPriority],
+      ["\u590D\u76D8\u65E5\u671F", question.reviewDueAt],
+      ["\u89C4\u5219\u5361", question.recitationCardId]
+    ].filter(([, value]) => String(value || "").trim());
+    if (!rows.length) {
+      return "";
+    }
+    return `
+    <div class="diagnosis-chip-grid">
+      ${rows.map(([label, value]) => `<span class="metric-pill">${escapeHtml(label)}\uFF1A${escapeHtml(value)}</span>`).join("")}
     </div>
   `;
   }
@@ -82914,6 +83148,8 @@ ${card.typicalMaterial}
     question.userAnswer = collectUserAnswerFromDom(question, container);
     updateConfidenceFromDom(question, container);
     updateHesitationOptionsFromDom(question, container);
+    updateScoreTrainingFieldsFromDom(question, container);
+    updatePerOptionJudgementFromDom(question, container);
     markAnswered(question);
   }
   function collectUserAnswerFromDom(question, container) {
@@ -82935,12 +83171,55 @@ ${card.typicalMaterial}
     );
     question.hesitationOptions = [...inputs].filter((input) => input.checked).map((input) => input.value).sort();
   }
+  function updateScoreTrainingFieldsFromDom(question, container) {
+    const fields = [
+      "secondaryWrongTags",
+      "eachOptionReason",
+      "decisiveKeyword",
+      "eliminatedOption",
+      "eliminationReason",
+      "wrongThinking",
+      "nextRule"
+    ];
+    fields.forEach((field) => {
+      const input = container.querySelector(
+        `[data-score-training-field="${cssEscape(field)}"][data-question-key="${cssEscape(questionKey(question))}"]`
+      );
+      if (!input) {
+        return;
+      }
+      if (field === "eliminatedOption") {
+        question[field] = normalizeAnswerToArray(input.value);
+      } else if (field === "secondaryWrongTags") {
+        question[field] = normalizeStringArray(input.value);
+      } else {
+        question[field] = input.value.trim();
+      }
+    });
+  }
+  function updatePerOptionJudgementFromDom(question, container) {
+    if (!isMultipleQuestion(question)) {
+      question.perOptionJudgement = {};
+      return;
+    }
+    const inputs = container.querySelectorAll(
+      `[data-per-option-judgement][data-question-key="${cssEscape(questionKey(question))}"]`
+    );
+    const next = {};
+    [...inputs].forEach((input) => {
+      if (input.checked && input.dataset.optionLabel) {
+        next[input.dataset.optionLabel] = input.value;
+      }
+    });
+    question.perOptionJudgement = normalizePerOptionJudgement(next);
+  }
   function updateRiskReasonsFromDom(question, container) {
     const inputs = container.querySelectorAll(
       `[data-risk-reason][data-question-key="${cssEscape(questionKey(question))}"]`
     );
     question.riskReasons = [...inputs].filter((input) => input.checked).map((input) => input.value);
     question.wrongReason = question.riskReasons[0] || null;
+    question.primaryWrongReason = question.wrongReason || "";
   }
   function markAnswered(question) {
     question.status = hasUserAnswer(question) ? "answered" : "unanswered";
@@ -82949,11 +83228,27 @@ ${card.typicalMaterial}
     question.maxScore = null;
     if (!hasUserAnswer(question)) {
       question.wrongReason = null;
+      question.primaryWrongReason = "";
+      question.secondaryWrongTags = [];
       question.isGuessed = false;
       question.guessReason = null;
       question.isHighRisk = false;
       question.confidenceStatus = null;
-      question.hesitationOptions = [];
+      question.hesitationOptions = "";
+      question.decisiveKeyword = "";
+      question.wrongThinking = "";
+      question.nextRule = "";
+      question.selectedVsCorrectDiff = "";
+      question.eachOptionReason = "";
+      question.eliminatedOption = "";
+      question.eliminationReason = "";
+      question.perOptionJudgement = {};
+      question.missedOptions = [];
+      question.overSelectedOptions = [];
+      question.multiSelectErrorType = "";
+      question.learningDiagnosis = "";
+      question.retestPriority = "";
+      question.reviewDueAt = "";
       question.riskCertainCorrectStreak = 0;
       question.secondReviewStillUncertain = false;
     }
@@ -82966,11 +83261,27 @@ ${card.typicalMaterial}
     question.score = null;
     question.maxScore = null;
     question.wrongReason = null;
+    question.primaryWrongReason = "";
+    question.secondaryWrongTags = [];
     question.isGuessed = false;
     question.guessReason = null;
     question.isHighRisk = false;
     question.confidenceStatus = null;
-    question.hesitationOptions = [];
+    question.hesitationOptions = "";
+    question.decisiveKeyword = "";
+    question.wrongThinking = "";
+    question.nextRule = "";
+    question.selectedVsCorrectDiff = "";
+    question.eachOptionReason = "";
+    question.eliminatedOption = "";
+    question.eliminationReason = "";
+    question.perOptionJudgement = {};
+    question.missedOptions = [];
+    question.overSelectedOptions = [];
+    question.multiSelectErrorType = "";
+    question.learningDiagnosis = "";
+    question.retestPriority = "";
+    question.reviewDueAt = "";
     question.riskReasons = [];
     question.reviewNotes = normalizeReviewNotes(null);
     question.riskCertainCorrectStreak = 0;
@@ -82987,7 +83298,7 @@ ${card.typicalMaterial}
     question.isGuessed = false;
     question.guessReason = null;
     question.confidenceStatus = null;
-    question.hesitationOptions = [];
+    question.hesitationOptions = "";
     question.riskCertainCorrectStreak = 0;
     question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
   }
@@ -82999,7 +83310,7 @@ ${card.typicalMaterial}
     question.isWrong = false;
     question.isGuessed = true;
     question.confidenceStatus = question.guessReason || null;
-    question.hesitationOptions = [];
+    question.hesitationOptions = "";
     question.riskCertainCorrectStreak = 0;
     question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
   }
@@ -83012,7 +83323,7 @@ ${card.typicalMaterial}
     question.isWrong = false;
     question.isHighRisk = true;
     question.confidenceStatus = null;
-    question.hesitationOptions = [];
+    question.hesitationOptions = "";
     question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
   }
   function gradeQuestion(question) {
@@ -83024,6 +83335,7 @@ ${card.typicalMaterial}
       question.isHighRisk = false;
       question.score = null;
       question.maxScore = null;
+      updateScoreDiagnosisFields(question);
       question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
       return;
     }
@@ -83035,6 +83347,7 @@ ${card.typicalMaterial}
       question.isHighRisk = false;
       question.score = null;
       question.maxScore = null;
+      updateScoreDiagnosisFields(question);
       question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
       return;
     }
@@ -83052,6 +83365,7 @@ ${card.typicalMaterial}
       question.isHighRisk = false;
       question.riskCertainCorrectStreak = 0;
     }
+    updateScoreDiagnosisFields(question);
     question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
   }
   function updateHighRiskAfterCorrectGrade(question) {
@@ -83102,14 +83416,85 @@ ${card.typicalMaterial}
       isFullScore
     };
   }
+  function updateScoreDiagnosisFields(question) {
+    const user = normalizeAnswerToArray(question.userAnswer);
+    const correct = normalizeAnswerToArray(question.correctAnswer);
+    const missedOptions = correct.filter((value) => !user.includes(value));
+    const overSelectedOptions = user.filter((value) => !correct.includes(value));
+    const multiSelectErrorType = isMultipleQuestion(question) ? getMultiSelectErrorType(missedOptions, overSelectedOptions, user, correct) : "";
+    const primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+    question.primaryWrongReason = primaryWrongReason;
+    question.secondaryWrongTags = normalizeStringArray(question.secondaryWrongTags);
+    question.perOptionJudgement = isMultipleQuestion(question) ? normalizePerOptionJudgement(question.perOptionJudgement) : {};
+    question.missedOptions = isMultipleQuestion(question) ? missedOptions : [];
+    question.overSelectedOptions = isMultipleQuestion(question) ? overSelectedOptions : [];
+    question.multiSelectErrorType = multiSelectErrorType;
+    question.selectedVsCorrectDiff = correct.length ? `\u5DF2\u9009 ${formatAnswer(user) || "\u672A\u9009"} / \u6B63\u786E ${formatAnswer(correct)}` : "";
+    question.learningDiagnosis = buildLearningDiagnosis(question);
+    question.retestPriority = question.retestPriority || inferRetestPriority(question);
+    question.reviewDueAt = question.reviewDueAt || inferReviewDueAt(question);
+    question.recitationCardId = question.recitationCardId || getRecitationCardForQuestion(question)?.cardId || "";
+  }
+  function getMultiSelectErrorType(missedOptions, overSelectedOptions, user, correct) {
+    if (!missedOptions.length && !overSelectedOptions.length) {
+      return "";
+    }
+    if (!user.length || missedOptions.length === correct.length && overSelectedOptions.length === user.length) {
+      return "\u5168\u9519";
+    }
+    if (missedOptions.length && overSelectedOptions.length) {
+      return "\u6F0F\u9009+\u9519\u9009";
+    }
+    return missedOptions.length ? "\u6F0F\u9009" : "\u9519\u9009";
+  }
+  function buildLearningDiagnosis(question) {
+    const parts = [
+      question.primaryWrongReason || question.wrongReason || "",
+      ...normalizeStringArray(question.secondaryWrongTags),
+      question.multiSelectErrorType ? `\u591A\u9009${question.multiSelectErrorType}` : "",
+      perOptionJudgementSummary(question)
+    ].filter(Boolean);
+    return parts.join(" / ");
+  }
+  function perOptionJudgementSummary(question) {
+    const judgement = normalizePerOptionJudgement(question.perOptionJudgement);
+    const entries = Object.entries(judgement);
+    if (!entries.length) {
+      return "";
+    }
+    return entries.map(([label, value]) => `${label}${value}`).join("\u3001");
+  }
+  function inferRetestPriority(question) {
+    if (question.status === "wrong" && isTangledQuestion(question)) {
+      return "\u9AD8";
+    }
+    if (question.status === "wrong" || question.isHighRisk || question.isGuessed || question.multiSelectErrorType) {
+      return "\u4E2D";
+    }
+    return "";
+  }
+  function inferReviewDueAt(question) {
+    if (question.status !== "wrong" && !question.isHighRisk && !question.isGuessed) {
+      return "";
+    }
+    const date = /* @__PURE__ */ new Date();
+    date.setDate(date.getDate() + (question.status === "wrong" ? 1 : 3));
+    return date.toISOString().slice(0, 10);
+  }
   function getQuestionMaxScore(question) {
     return isMultipleQuestion(question) ? 2 : 1;
   }
   function persistReviewMetadata(question) {
     question.riskReasons = Array.isArray(question.riskReasons) ? question.riskReasons : [];
+    question.primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+    question.secondaryWrongTags = normalizeStringArray(question.secondaryWrongTags);
     question.hesitationOptions = normalizeAnswerToArray(question.hesitationOptions);
+    question.eliminatedOption = normalizeAnswerToArray(question.eliminatedOption);
+    question.perOptionJudgement = isMultipleQuestion(question) ? normalizePerOptionJudgement(question.perOptionJudgement) : {};
     question.reviewNotes = normalizeReviewNotes(question.reviewNotes);
     question.wrongReason = question.riskReasons[0] || question.wrongReason || null;
+    question.primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+    question.learningDiagnosis = buildLearningDiagnosis(question);
     question.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
   }
   function normalizeReviewNotes(notes) {
@@ -83123,6 +83508,11 @@ ${card.typicalMaterial}
       hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
       riskReasons: getQuestionRiskReasons(question),
       wrongReason: question.wrongReason ?? null,
+      primaryWrongReason: question.primaryWrongReason || question.wrongReason || "",
+      secondaryWrongTags: normalizeStringArray(question.secondaryWrongTags),
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff || "",
+      multiSelectErrorType: question.multiSelectErrorType || "",
+      learningDiagnosis: question.learningDiagnosis || "",
       reviewNotes: normalizeReviewNotes(question.reviewNotes),
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
@@ -83134,6 +83524,23 @@ ${card.typicalMaterial}
         isHighRisk: question.isHighRisk,
         confidenceStatus: question.confidenceStatus,
         hesitationOptions: question.hesitationOptions,
+        primaryWrongReason: question.primaryWrongReason,
+        secondaryWrongTags: question.secondaryWrongTags,
+        decisiveKeyword: question.decisiveKeyword,
+        wrongThinking: question.wrongThinking,
+        nextRule: question.nextRule,
+        selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+        eachOptionReason: question.eachOptionReason,
+        eliminatedOption: question.eliminatedOption,
+        eliminationReason: question.eliminationReason,
+        perOptionJudgement: question.perOptionJudgement,
+        missedOptions: question.missedOptions,
+        overSelectedOptions: question.overSelectedOptions,
+        multiSelectErrorType: question.multiSelectErrorType,
+        learningDiagnosis: question.learningDiagnosis,
+        retestPriority: question.retestPriority,
+        reviewDueAt: question.reviewDueAt,
+        recitationCardId: question.recitationCardId,
         riskReasons: question.riskReasons,
         reviewNotes: question.reviewNotes,
         riskCertainCorrectStreak: question.riskCertainCorrectStreak,
@@ -83142,7 +83549,24 @@ ${card.typicalMaterial}
       });
       question.isHighRisk = Boolean(question.isHighRisk);
       question.confidenceStatus = question.confidenceStatus || null;
-      question.hesitationOptions = normalizeAnswerToArray(question.hesitationOptions);
+      question.primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+      question.secondaryWrongTags = normalizeStringArray(question.secondaryWrongTags);
+      question.hesitationOptions = question.hesitationOptions ?? "";
+      question.decisiveKeyword = question.decisiveKeyword || "";
+      question.wrongThinking = question.wrongThinking || "";
+      question.nextRule = question.nextRule || "";
+      question.selectedVsCorrectDiff = question.selectedVsCorrectDiff || "";
+      question.eachOptionReason = question.eachOptionReason || "";
+      question.eliminatedOption = question.eliminatedOption ?? "";
+      question.eliminationReason = question.eliminationReason || "";
+      question.perOptionJudgement = isMultipleQuestion(question) ? normalizePerOptionJudgement(question.perOptionJudgement) : {};
+      question.missedOptions = normalizeAnswerToArray(question.missedOptions);
+      question.overSelectedOptions = normalizeAnswerToArray(question.overSelectedOptions);
+      question.multiSelectErrorType = question.multiSelectErrorType || "";
+      question.learningDiagnosis = question.learningDiagnosis || "";
+      question.retestPriority = question.retestPriority || "";
+      question.reviewDueAt = question.reviewDueAt || "";
+      question.recitationCardId = question.recitationCardId || getRecitationCardForQuestion(question)?.cardId || "";
       question.riskReasons = Array.isArray(question.riskReasons) ? question.riskReasons.filter(Boolean) : question.wrongReason ? [question.wrongReason] : [];
       question.reviewNotes = normalizeReviewNotes(question.reviewNotes);
       question.riskCertainCorrectStreak = Number(question.riskCertainCorrectStreak) || 0;
@@ -83152,6 +83576,23 @@ ${card.typicalMaterial}
         isHighRisk: question.isHighRisk,
         confidenceStatus: question.confidenceStatus,
         hesitationOptions: question.hesitationOptions,
+        primaryWrongReason: question.primaryWrongReason,
+        secondaryWrongTags: question.secondaryWrongTags,
+        decisiveKeyword: question.decisiveKeyword,
+        wrongThinking: question.wrongThinking,
+        nextRule: question.nextRule,
+        selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+        eachOptionReason: question.eachOptionReason,
+        eliminatedOption: question.eliminatedOption,
+        eliminationReason: question.eliminationReason,
+        perOptionJudgement: question.perOptionJudgement,
+        missedOptions: question.missedOptions,
+        overSelectedOptions: question.overSelectedOptions,
+        multiSelectErrorType: question.multiSelectErrorType,
+        learningDiagnosis: question.learningDiagnosis,
+        retestPriority: question.retestPriority,
+        reviewDueAt: question.reviewDueAt,
+        recitationCardId: question.recitationCardId,
         riskReasons: question.riskReasons,
         reviewNotes: question.reviewNotes,
         riskCertainCorrectStreak: question.riskCertainCorrectStreak,
@@ -83183,6 +83624,16 @@ ${card.typicalMaterial}
         isHighRisk: question.isHighRisk,
         confidenceStatus: question.confidenceStatus,
         hesitationOptions: question.hesitationOptions,
+        primaryWrongReason: question.primaryWrongReason,
+        secondaryWrongTags: question.secondaryWrongTags,
+        selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+        missedOptions: question.missedOptions,
+        overSelectedOptions: question.overSelectedOptions,
+        multiSelectErrorType: question.multiSelectErrorType,
+        learningDiagnosis: question.learningDiagnosis,
+        retestPriority: question.retestPriority,
+        reviewDueAt: question.reviewDueAt,
+        recitationCardId: question.recitationCardId,
         riskReasons: question.riskReasons,
         riskCertainCorrectStreak: question.riskCertainCorrectStreak,
         secondReviewStillUncertain: question.secondReviewStillUncertain
@@ -83199,6 +83650,16 @@ ${card.typicalMaterial}
         isHighRisk: question.isHighRisk,
         confidenceStatus: question.confidenceStatus,
         hesitationOptions: question.hesitationOptions,
+        primaryWrongReason: question.primaryWrongReason,
+        secondaryWrongTags: question.secondaryWrongTags,
+        selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+        missedOptions: question.missedOptions,
+        overSelectedOptions: question.overSelectedOptions,
+        multiSelectErrorType: question.multiSelectErrorType,
+        learningDiagnosis: question.learningDiagnosis,
+        retestPriority: question.retestPriority,
+        reviewDueAt: question.reviewDueAt,
+        recitationCardId: question.recitationCardId,
         riskReasons: question.riskReasons,
         riskCertainCorrectStreak: question.riskCertainCorrectStreak,
         secondReviewStillUncertain: question.secondReviewStillUncertain
@@ -83412,11 +83873,28 @@ ${card.typicalMaterial}
         maxScore: null,
         isWrong: false,
         wrongReason: null,
+        primaryWrongReason: "",
+        secondaryWrongTags: [],
         isGuessed: false,
         guessReason: null,
         isHighRisk: false,
         confidenceStatus: null,
-        hesitationOptions: [],
+        hesitationOptions: "",
+        decisiveKeyword: "",
+        wrongThinking: "",
+        nextRule: "",
+        selectedVsCorrectDiff: "",
+        eachOptionReason: "",
+        eliminatedOption: "",
+        eliminationReason: "",
+        perOptionJudgement: {},
+        missedOptions: [],
+        overSelectedOptions: [],
+        multiSelectErrorType: "",
+        learningDiagnosis: "",
+        retestPriority: "",
+        reviewDueAt: "",
+        recitationCardId: "",
         riskReasons: [],
         reviewNotes: normalizeReviewNotes(null),
         riskCertainCorrectStreak: 0,
@@ -83432,11 +83910,28 @@ ${card.typicalMaterial}
       maxScore: question.maxScore ?? null,
       isWrong: question.isWrong ?? false,
       wrongReason: question.wrongReason ?? null,
+      primaryWrongReason: question.primaryWrongReason || question.wrongReason || "",
+      secondaryWrongTags: normalizeStringArray(question.secondaryWrongTags),
       isGuessed: question.isGuessed ?? false,
       guessReason: question.guessReason ?? null,
       isHighRisk: question.isHighRisk ?? false,
       confidenceStatus: question.confidenceStatus ?? null,
-      hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
+      hesitationOptions: question.hesitationOptions ?? "",
+      decisiveKeyword: question.decisiveKeyword || "",
+      wrongThinking: question.wrongThinking || "",
+      nextRule: question.nextRule || "",
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff || "",
+      eachOptionReason: question.eachOptionReason || "",
+      eliminatedOption: question.eliminatedOption || "",
+      eliminationReason: question.eliminationReason || "",
+      perOptionJudgement: normalizePerOptionJudgement(question.perOptionJudgement),
+      missedOptions: normalizeAnswerToArray(question.missedOptions),
+      overSelectedOptions: normalizeAnswerToArray(question.overSelectedOptions),
+      multiSelectErrorType: question.multiSelectErrorType || "",
+      learningDiagnosis: question.learningDiagnosis || "",
+      retestPriority: question.retestPriority || "",
+      reviewDueAt: question.reviewDueAt || "",
+      recitationCardId: question.recitationCardId || "",
       riskReasons: Array.isArray(question.riskReasons) ? question.riskReasons : [],
       reviewNotes: normalizeReviewNotes(question.reviewNotes),
       riskCertainCorrectStreak: question.riskCertainCorrectStreak ?? 0,
@@ -84205,6 +84700,20 @@ ${card.typicalMaterial}
     }
     return [text];
   }
+  function normalizeStringArray(value) {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item || "").trim()).filter(Boolean);
+    }
+    return String(value || "").split(/[，,、\s]+/).map((item) => item.trim()).filter(Boolean);
+  }
+  function normalizePerOptionJudgement(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return {};
+    }
+    return Object.fromEntries(
+      Object.entries(value).map(([label, judgement]) => [String(label || "").trim().toUpperCase(), String(judgement || "").trim()]).filter(([label, judgement]) => label && PER_OPTION_JUDGEMENT_VALUES.includes(judgement))
+    );
+  }
   function isMultipleQuestion(question) {
     const value = String(question.type).toLowerCase();
     return value.includes("multi") || value.includes("\u591A\u9009");
@@ -84805,6 +85314,7 @@ ${question.explanation || "\u6682\u65E0\u89E3\u6790"}
       confidenceStatus: question.confidenceStatus,
       hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
       reviewNotes: normalizeReviewNotes(question.reviewNotes),
+      ...scoreDiagnosisExportFields(question),
       updatedAt: question.updatedAt
     };
   }
@@ -84827,6 +85337,7 @@ ${question.explanation || "\u6682\u65E0\u89E3\u6790"}
       hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
       riskReasons: getQuestionRiskReasons(question),
       reviewNotes: normalizeReviewNotes(question.reviewNotes),
+      ...scoreDiagnosisExportFields(question),
       updatedAt: question.updatedAt
     };
   }
@@ -84850,7 +85361,29 @@ ${question.explanation || "\u6682\u65E0\u89E3\u6790"}
       reviewNotes: normalizeReviewNotes(question.reviewNotes),
       riskCertainCorrectStreak: question.riskCertainCorrectStreak || 0,
       secondReviewStillUncertain: Boolean(question.secondReviewStillUncertain),
+      ...scoreDiagnosisExportFields(question),
       updatedAt: question.updatedAt
+    };
+  }
+  function scoreDiagnosisExportFields(question) {
+    return {
+      primaryWrongReason: question.primaryWrongReason || question.wrongReason || "",
+      secondaryWrongTags: normalizeStringArray(question.secondaryWrongTags),
+      decisiveKeyword: question.decisiveKeyword || "",
+      wrongThinking: question.wrongThinking || "",
+      nextRule: question.nextRule || "",
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff || "",
+      eachOptionReason: question.eachOptionReason || "",
+      eliminatedOption: normalizeAnswerToArray(question.eliminatedOption),
+      eliminationReason: question.eliminationReason || "",
+      perOptionJudgement: normalizePerOptionJudgement(question.perOptionJudgement),
+      missedOptions: normalizeAnswerToArray(question.missedOptions),
+      overSelectedOptions: normalizeAnswerToArray(question.overSelectedOptions),
+      multiSelectErrorType: question.multiSelectErrorType || "",
+      learningDiagnosis: question.learningDiagnosis || "",
+      retestPriority: question.retestPriority || "",
+      reviewDueAt: question.reviewDueAt || "",
+      recitationCardId: question.recitationCardId || ""
     };
   }
   function toRecitationCardExportItem(card) {
