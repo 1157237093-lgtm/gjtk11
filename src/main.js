@@ -18,6 +18,8 @@ const GPT_GONGJI_URL_KEY = "gpt-gongji-url-v1";
 const CONFIDENCE_OPTIONS = ["确定", "不确定", "蒙的", "两个选项纠结", "多个选项纠结"];
 const RISK_CONFIDENCE_VALUES = ["不确定", "蒙的", "两个选项纠结", "多个选项纠结"];
 const GUESS_REASONS = ["蒙的", "猜的", "不确定", "两个选项纠结", "多个选项纠结"];
+const TANGLED_CONFIDENCE_VALUES = ["两个选项纠结", "多个选项纠结"];
+const PER_OPTION_JUDGEMENT_VALUES = ["必选", "排除", "不确定"];
 const RECITATION_CATEGORIES = [
   "问法类",
   "治理类",
@@ -446,6 +448,7 @@ function bindEvents() {
 
   document.getElementById("submit-exam").addEventListener("click", () => {
     const questions = getFilteredPaperQuestions();
+    syncRenderedQuestionTrainingFields(elements.paperQuestionList, questions);
     if (!questions.length) {
       flashMessage("当前筛选下没有题目可交卷。", true);
       return;
@@ -463,6 +466,16 @@ function bindEvents() {
     if (missingConfidence.length) {
       flashMessage(`还有 ${missingConfidence.length} 道已作答题未选择信心状态，不能提交。`, true);
       return;
+    }
+    if (state.paperMode !== "exam") {
+      const missingTangledTraining = answeredQuestions.filter((question) => getMissingTangledTrainingFields(question).length);
+      if (missingTangledTraining.length) {
+        flashMessage(
+          `还有 ${missingTangledTraining.length} 道纠结题未补全二选一训练字段，不能对答案。`,
+          true
+        );
+        return;
+      }
     }
 
     let gradedCount = 0;
@@ -1246,6 +1259,7 @@ function renderHomeView() {
   const recitationCards = getRecitationCards();
   const abnormalItems = getAbnormalItems();
   const todayText = new Date().toISOString().slice(0, 10);
+  const scoreDiagnosisStats = getScoreDiagnosisStats(state.store.questions);
 
   elements.globalSummary.innerHTML = summaryCardsMarkup([
     { label: "期次数", value: papers.length },
@@ -1281,6 +1295,13 @@ function renderHomeView() {
     { label: "二刷仍不确定", value: state.store.questions.filter((question) => question.secondReviewStillUncertain).length },
     { label: "最多犹豫组合", value: getTopHesitationCombo(state.store.questions) },
     { label: "高频错因 Top5", value: topRiskReasonText(state.store.questions) },
+    { label: "真实正确率", value: scoreDiagnosisStats.realAccuracyText },
+    { label: "表面正确率", value: scoreDiagnosisStats.surfaceAccuracyText },
+    { label: "二选一错误率", value: scoreDiagnosisStats.tangledErrorRateText },
+    { label: "多选漏选数", value: scoreDiagnosisStats.multiMissedCount },
+    { label: "多选错选数", value: scoreDiagnosisStats.multiOverSelectedCount },
+    { label: "Top5 提分错因", value: scoreDiagnosisStats.topPrimaryWrongReasonsText },
+    { label: "Top10 易混标签", value: scoreDiagnosisStats.topSecondaryWrongTagsText },
   ]);
   renderGlobalTimingPanel(globalTimingStats);
   renderTodayRecitationPanel();
@@ -2169,9 +2190,18 @@ function bindQuestionEvents(container, questions, mode, isWrongBook = false, isG
       }
       updateConfidenceFromDom(question, container);
       updateHesitationOptionsFromDom(question, container);
+      updateScoreTrainingFieldsFromDom(question, container);
+      updatePerOptionJudgementFromDom(question, container);
       if (!question.confidenceStatus) {
         flashMessage("请先选择信心状态。", true);
         return;
+      }
+      if (shouldRequireTangledTrainingBeforeAnswer(mode, isWrongBook, isGuessBook, isRiskBook)) {
+        const missingTangledTraining = getMissingTangledTrainingFields(question);
+        if (missingTangledTraining.length) {
+          flashMessage(`请先补全二选一训练字段：${missingTangledTraining.join("、")}。`, true);
+          return;
+        }
       }
       question.userAnswer = selectedAnswer;
       markAnswered(question);
@@ -2376,6 +2406,40 @@ function bindQuestionEvents(container, questions, mode, isWrongBook = false, isG
     });
   });
 
+  container.querySelectorAll("[data-score-training-field]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const question = questionMap.get(input.dataset.questionKey);
+      if (!question) {
+        return;
+      }
+
+      updateScoreTrainingFieldsFromDom(question, container);
+      persistReviewMetadata(question);
+      if (isGradedQuestion(question) && hasUserAnswer(question)) {
+        gradeQuestion(question);
+      }
+      persistStore();
+      renderApp();
+    });
+  });
+
+  container.querySelectorAll("[data-per-option-judgement]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const question = questionMap.get(input.dataset.questionKey);
+      if (!question) {
+        return;
+      }
+
+      updatePerOptionJudgementFromDom(question, container);
+      persistReviewMetadata(question);
+      if (isGradedQuestion(question) && hasUserAnswer(question)) {
+        gradeQuestion(question);
+      }
+      persistStore();
+      renderApp();
+    });
+  });
+
   container.querySelectorAll("[data-review-field]").forEach((textarea) => {
     textarea.addEventListener("change", () => {
       const question = questionMap.get(textarea.dataset.questionKey);
@@ -2409,6 +2473,24 @@ function bindQuestionEvents(container, questions, mode, isWrongBook = false, isG
       persistStore();
       renderApp();
     });
+  });
+}
+
+function syncRenderedQuestionTrainingFields(container, questions) {
+  if (!container) {
+    return;
+  }
+  const questionMap = new Map(questions.map((question) => [questionKey(question), question]));
+  container.querySelectorAll("[data-question-card]").forEach((card) => {
+    const question = questionMap.get(card.dataset.questionKey);
+    if (!question) {
+      return;
+    }
+    updateConfidenceFromDom(question, container);
+    updateHesitationOptionsFromDom(question, container);
+    updateScoreTrainingFieldsFromDom(question, container);
+    updatePerOptionJudgementFromDom(question, container);
+    persistReviewMetadata(question);
   });
 }
 
@@ -2643,11 +2725,28 @@ function normalizePaperQuestion(rawQuestion, paper) {
     maxScore: null,
     isWrong: false,
     wrongReason: null,
+    primaryWrongReason: "",
+    secondaryWrongTags: [],
     isGuessed: false,
     guessReason: null,
     isHighRisk: false,
     confidenceStatus: null,
-    hesitationOptions: [],
+    hesitationOptions: "",
+    decisiveKeyword: "",
+    wrongThinking: "",
+    nextRule: "",
+    selectedVsCorrectDiff: "",
+    eachOptionReason: "",
+    eliminatedOption: "",
+    eliminationReason: "",
+    perOptionJudgement: {},
+    missedOptions: [],
+    overSelectedOptions: [],
+    multiSelectErrorType: "",
+    learningDiagnosis: "",
+    retestPriority: "",
+    reviewDueAt: "",
+    recitationCardId: "",
     riskReasons: [],
     reviewNotes: normalizeReviewNotes(null),
     riskCertainCorrectStreak: 0,
@@ -3015,9 +3114,11 @@ function generateOrUpdateRecitationCardFromQuestion(question, options = {}) {
       updatedAt: new Date().toISOString(),
     });
     upsertRecitationCard(merged);
+    question.recitationCardId = merged.cardId || "";
     return { card: merged, created: false };
   }
   upsertRecitationCard(incoming);
+  question.recitationCardId = incoming.cardId || "";
   return { card: incoming, created: true };
 }
 
@@ -4288,6 +4389,38 @@ function topRiskReasonText(questions) {
   return entries.length ? entries.map((entry) => `${entry.label}${entry.count}`).join(" / ") : "--";
 }
 
+function getScoreDiagnosisStats(questions) {
+  const answered = questions.filter(hasUserAnswer);
+  const graded = answered.filter(isGradedQuestion);
+  const surfaceCorrect = graded.filter((question) => question.status === "correct");
+  const sureCorrect = surfaceCorrect.filter((question) => question.confidenceStatus === "确定" && !question.isGuessed);
+  const tangled = graded.filter(isTangledQuestion);
+  const tangledWrong = tangled.filter((question) => question.status === "wrong");
+  const multi = graded.filter(isMultipleQuestion);
+  const multiMissedCount = multi.reduce((sum, question) => sum + normalizeAnswerToArray(question.missedOptions).length, 0);
+  const multiOverSelectedCount = multi.reduce((sum, question) => sum + normalizeAnswerToArray(question.overSelectedOptions).length, 0);
+  const primaryReasons = topCountEntries(
+    questions.filter((question) => question.isWrong || question.isHighRisk),
+    (question) => question.primaryWrongReason || question.wrongReason || "未标记",
+    5
+  ).filter((entry) => entry.label !== "未标记");
+  const secondaryTags = topCountEntries(
+    questions.flatMap((question) => normalizeStringArray(question.secondaryWrongTags).map((tag) => ({ tag }))),
+    (item) => item.tag,
+    10
+  );
+
+  return {
+    realAccuracyText: answered.length ? `${Math.round((sureCorrect.length / answered.length) * 100)}%` : "--",
+    surfaceAccuracyText: answered.length ? `${Math.round((surfaceCorrect.length / answered.length) * 100)}%` : "--",
+    tangledErrorRateText: tangled.length ? `${Math.round((tangledWrong.length / tangled.length) * 100)}%` : "--",
+    multiMissedCount,
+    multiOverSelectedCount,
+    topPrimaryWrongReasonsText: primaryReasons.length ? primaryReasons.map((entry) => `${entry.label}${entry.count}`).join(" / ") : "--",
+    topSecondaryWrongTagsText: secondaryTags.length ? secondaryTags.map((entry) => `${entry.label}${entry.count}`).join(" / ") : "--",
+  };
+}
+
 function getTopHesitationCombo(questions) {
   const entries = topCountEntries(
     questions.filter((question) => getHesitationCombo(question)),
@@ -4300,6 +4433,29 @@ function getTopHesitationCombo(questions) {
 function getHesitationCombo(question) {
   const options = normalizeAnswerToArray(question.hesitationOptions);
   return options.length ? options.join("/") : "";
+}
+
+function isTangledQuestion(question) {
+  return TANGLED_CONFIDENCE_VALUES.includes(question.confidenceStatus);
+}
+
+function getMissingTangledTrainingFields(question) {
+  if (!isTangledQuestion(question)) {
+    return [];
+  }
+  return [
+    ["hesitationOptions", "纠结选项", normalizeAnswerToArray(question.hesitationOptions).length],
+    ["eachOptionReason", "各选项理由", String(question.eachOptionReason || "").trim()],
+    ["decisiveKeyword", "定胜关键词", String(question.decisiveKeyword || "").trim()],
+    ["eliminatedOption", "淘汰项", normalizeAnswerToArray(question.eliminatedOption).length],
+    ["eliminationReason", "淘汰理由", String(question.eliminationReason || "").trim()],
+  ]
+    .filter(([, , value]) => !value)
+    .map(([, label]) => label);
+}
+
+function shouldRequireTangledTrainingBeforeAnswer(mode, isWrongBook, isGuessBook, isRiskBook) {
+  return mode !== "exam" && !isGuessBook && (isWrongBook || isRiskBook || state.currentView === "paper");
 }
 
 function isCorrectButUncertain(question) {
@@ -4713,6 +4869,7 @@ function questionCardMarkup(question, mode, isWrongBook, isGuessBook = false, is
           .join("")}
       </div>
       ${confidencePanelMarkup(question)}
+      ${multiple ? perOptionJudgementMarkup(question) : ""}
       <div class="question-actions">
         <button class="secondary" data-submit-question="true" data-question-key="${escapeHtmlAttr(key)}">
           ${mode === "exam" ? "保存作答" : isWrongBook || isGuessBook || isRiskBook ? "提交重刷" : "提交判题"}
@@ -4762,6 +4919,8 @@ function questionCardMarkup(question, mode, isWrongBook, isGuessBook = false, is
                 question.maxScore ? ` · 得分：${escapeHtml(formatScore(question.score))}/${escapeHtml(formatScore(question.maxScore))}` : ""
               }${question.confidenceStatus ? ` · 信心：${escapeHtml(question.confidenceStatus)}` : ""}${
                 getHesitationCombo(question) ? ` · 犹豫项：${escapeHtml(getHesitationCombo(question))}` : ""
+              }${question.selectedVsCorrectDiff ? ` · 选择差异：${escapeHtml(question.selectedVsCorrectDiff)}` : ""}${
+                question.multiSelectErrorType ? ` · 多选诊断：${escapeHtml(question.multiSelectErrorType)}` : ""
               }
             </div>
           `
@@ -4795,6 +4954,7 @@ function questionCardMarkup(question, mode, isWrongBook, isGuessBook = false, is
 function confidencePanelMarkup(question) {
   const key = questionKey(question);
   const hesitationOptions = normalizeAnswerToArray(question.hesitationOptions);
+  const missingTangledTraining = getMissingTangledTrainingFields(question);
   return `
     <div class="wrong-reason-panel">
       <label>
@@ -4823,6 +4983,64 @@ function confidencePanelMarkup(question) {
           `
         ).join("")}
       </div>
+      ${isTangledQuestion(question) && missingTangledTraining.length ? `<p class="muted">纠结题复盘待补全：${escapeHtml(missingTangledTraining.join("、"))}</p>` : ""}
+      <div class="review-grid">
+        <label>
+          各选项理由
+          <textarea rows="2" data-score-training-field="eachOptionReason" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.eachOptionReason || "")}</textarea>
+        </label>
+        <label>
+          定胜关键词
+          <textarea rows="2" data-score-training-field="decisiveKeyword" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.decisiveKeyword || "")}</textarea>
+        </label>
+        <label>
+          淘汰项
+          <input data-score-training-field="eliminatedOption" data-question-key="${escapeHtmlAttr(key)}" value="${escapeHtmlAttr(formatAnswer(question.eliminatedOption) || "")}" />
+        </label>
+        <label>
+          淘汰理由
+          <textarea rows="2" data-score-training-field="eliminationReason" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.eliminationReason || "")}</textarea>
+        </label>
+      </div>
+    </div>
+  `;
+}
+
+function perOptionJudgementMarkup(question) {
+  const key = questionKey(question);
+  const judgement = normalizePerOptionJudgement(question.perOptionJudgement);
+  return `
+    <div class="wrong-reason-panel per-option-panel">
+      <div class="insight-title">多选逐项判断</div>
+      <div class="per-option-grid">
+        ${question.options
+          .map((option) => {
+            const optionValue = judgement[option.label] || "";
+            return `
+              <div class="per-option-row">
+                <span class="option-badge">${escapeHtml(option.label)}</span>
+                ${PER_OPTION_JUDGEMENT_VALUES.map(
+                  (value) => `
+                    <label class="metric-pill">
+                      <input
+                        type="radio"
+                        name="per-option-${escapeHtmlAttr(key)}-${escapeHtmlAttr(option.label)}"
+                        value="${escapeHtmlAttr(value)}"
+                        data-per-option-judgement="true"
+                        data-option-label="${escapeHtmlAttr(option.label)}"
+                        data-question-key="${escapeHtmlAttr(key)}"
+                        ${optionValue === value ? "checked" : ""}
+                      />
+                      ${escapeHtml(value)}
+                    </label>
+                  `
+                ).join("")}
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
+      <p class="muted">逐项判断只用于训练诊断，不参与最终判题。</p>
     </div>
   `;
 }
@@ -4851,6 +5069,10 @@ function riskReviewPanelMarkup(question) {
         ).join("")}
       </div>
       <div class="review-grid">
+        <label>
+          易混标签
+          <input data-score-training-field="secondaryWrongTags" data-question-key="${escapeHtmlAttr(key)}" value="${escapeHtmlAttr(normalizeStringArray(question.secondaryWrongTags).join("，"))}" />
+        </label>
         ${REVIEW_PROMPTS.map(
           ([field, label]) => `
             <label>
@@ -4859,7 +5081,37 @@ function riskReviewPanelMarkup(question) {
             </label>
           `
         ).join("")}
+        <label>
+          错误思路
+          <textarea rows="2" data-score-training-field="wrongThinking" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.wrongThinking || "")}</textarea>
+        </label>
+        <label>
+          下次规则
+          <textarea rows="2" data-score-training-field="nextRule" data-question-key="${escapeHtmlAttr(key)}">${escapeHtml(question.nextRule || "")}</textarea>
+        </label>
       </div>
+      ${scoreDiagnosisPanelMarkup(question)}
+    </div>
+  `;
+}
+
+function scoreDiagnosisPanelMarkup(question) {
+  const rows = [
+    ["选择差异", question.selectedVsCorrectDiff],
+    ["多选诊断", question.multiSelectErrorType],
+    ["漏选", formatAnswer(question.missedOptions)],
+    ["错选", formatAnswer(question.overSelectedOptions)],
+    ["学习诊断", question.learningDiagnosis],
+    ["复测优先级", question.retestPriority],
+    ["复盘日期", question.reviewDueAt],
+    ["规则卡", question.recitationCardId],
+  ].filter(([, value]) => String(value || "").trim());
+  if (!rows.length) {
+    return "";
+  }
+  return `
+    <div class="diagnosis-chip-grid">
+      ${rows.map(([label, value]) => `<span class="metric-pill">${escapeHtml(label)}：${escapeHtml(value)}</span>`).join("")}
     </div>
   `;
 }
@@ -4883,6 +5135,8 @@ function updateUserAnswerFromDom(question, container) {
   question.userAnswer = collectUserAnswerFromDom(question, container);
   updateConfidenceFromDom(question, container);
   updateHesitationOptionsFromDom(question, container);
+  updateScoreTrainingFieldsFromDom(question, container);
+  updatePerOptionJudgementFromDom(question, container);
   markAnswered(question);
 }
 
@@ -4908,12 +5162,57 @@ function updateHesitationOptionsFromDom(question, container) {
   question.hesitationOptions = [...inputs].filter((input) => input.checked).map((input) => input.value).sort();
 }
 
+function updateScoreTrainingFieldsFromDom(question, container) {
+  const fields = [
+    "secondaryWrongTags",
+    "eachOptionReason",
+    "decisiveKeyword",
+    "eliminatedOption",
+    "eliminationReason",
+    "wrongThinking",
+    "nextRule",
+  ];
+  fields.forEach((field) => {
+    const input = container.querySelector(
+      `[data-score-training-field="${cssEscape(field)}"][data-question-key="${cssEscape(questionKey(question))}"]`
+    );
+    if (!input) {
+      return;
+    }
+    if (field === "eliminatedOption") {
+      question[field] = normalizeAnswerToArray(input.value);
+    } else if (field === "secondaryWrongTags") {
+      question[field] = normalizeStringArray(input.value);
+    } else {
+      question[field] = input.value.trim();
+    }
+  });
+}
+
+function updatePerOptionJudgementFromDom(question, container) {
+  if (!isMultipleQuestion(question)) {
+    question.perOptionJudgement = {};
+    return;
+  }
+  const inputs = container.querySelectorAll(
+    `[data-per-option-judgement][data-question-key="${cssEscape(questionKey(question))}"]`
+  );
+  const next = {};
+  [...inputs].forEach((input) => {
+    if (input.checked && input.dataset.optionLabel) {
+      next[input.dataset.optionLabel] = input.value;
+    }
+  });
+  question.perOptionJudgement = normalizePerOptionJudgement(next);
+}
+
 function updateRiskReasonsFromDom(question, container) {
   const inputs = container.querySelectorAll(
     `[data-risk-reason][data-question-key="${cssEscape(questionKey(question))}"]`
   );
   question.riskReasons = [...inputs].filter((input) => input.checked).map((input) => input.value);
   question.wrongReason = question.riskReasons[0] || null;
+  question.primaryWrongReason = question.wrongReason || "";
 }
 
 function markAnswered(question) {
@@ -4923,11 +5222,27 @@ function markAnswered(question) {
   question.maxScore = null;
   if (!hasUserAnswer(question)) {
     question.wrongReason = null;
+    question.primaryWrongReason = "";
+    question.secondaryWrongTags = [];
     question.isGuessed = false;
     question.guessReason = null;
     question.isHighRisk = false;
     question.confidenceStatus = null;
-    question.hesitationOptions = [];
+    question.hesitationOptions = "";
+    question.decisiveKeyword = "";
+    question.wrongThinking = "";
+    question.nextRule = "";
+    question.selectedVsCorrectDiff = "";
+    question.eachOptionReason = "";
+    question.eliminatedOption = "";
+    question.eliminationReason = "";
+    question.perOptionJudgement = {};
+    question.missedOptions = [];
+    question.overSelectedOptions = [];
+    question.multiSelectErrorType = "";
+    question.learningDiagnosis = "";
+    question.retestPriority = "";
+    question.reviewDueAt = "";
     question.riskCertainCorrectStreak = 0;
     question.secondReviewStillUncertain = false;
   }
@@ -4941,11 +5256,27 @@ function clearQuestionProgress(question) {
   question.score = null;
   question.maxScore = null;
   question.wrongReason = null;
+  question.primaryWrongReason = "";
+  question.secondaryWrongTags = [];
   question.isGuessed = false;
   question.guessReason = null;
   question.isHighRisk = false;
   question.confidenceStatus = null;
-  question.hesitationOptions = [];
+  question.hesitationOptions = "";
+  question.decisiveKeyword = "";
+  question.wrongThinking = "";
+  question.nextRule = "";
+  question.selectedVsCorrectDiff = "";
+  question.eachOptionReason = "";
+  question.eliminatedOption = "";
+  question.eliminationReason = "";
+  question.perOptionJudgement = {};
+  question.missedOptions = [];
+  question.overSelectedOptions = [];
+  question.multiSelectErrorType = "";
+  question.learningDiagnosis = "";
+  question.retestPriority = "";
+  question.reviewDueAt = "";
   question.riskReasons = [];
   question.reviewNotes = normalizeReviewNotes(null);
   question.riskCertainCorrectStreak = 0;
@@ -4963,7 +5294,7 @@ function resetQuestionForWrongDrill(question) {
   question.isGuessed = false;
   question.guessReason = null;
   question.confidenceStatus = null;
-  question.hesitationOptions = [];
+  question.hesitationOptions = "";
   question.riskCertainCorrectStreak = 0;
   question.updatedAt = new Date().toISOString();
 }
@@ -4976,7 +5307,7 @@ function resetQuestionForGuessDrill(question) {
   question.isWrong = false;
   question.isGuessed = true;
   question.confidenceStatus = question.guessReason || null;
-  question.hesitationOptions = [];
+  question.hesitationOptions = "";
   question.riskCertainCorrectStreak = 0;
   question.updatedAt = new Date().toISOString();
 }
@@ -4990,7 +5321,7 @@ function resetQuestionForRiskDrill(question) {
   question.isWrong = false;
   question.isHighRisk = true;
   question.confidenceStatus = null;
-  question.hesitationOptions = [];
+  question.hesitationOptions = "";
   question.updatedAt = new Date().toISOString();
 }
 
@@ -5003,6 +5334,7 @@ function gradeQuestion(question) {
     question.isHighRisk = false;
     question.score = null;
     question.maxScore = null;
+    updateScoreDiagnosisFields(question);
     question.updatedAt = new Date().toISOString();
     return;
   }
@@ -5015,6 +5347,7 @@ function gradeQuestion(question) {
     question.isHighRisk = false;
     question.score = null;
     question.maxScore = null;
+    updateScoreDiagnosisFields(question);
     question.updatedAt = new Date().toISOString();
     return;
   }
@@ -5033,6 +5366,7 @@ function gradeQuestion(question) {
     question.isHighRisk = false;
     question.riskCertainCorrectStreak = 0;
   }
+  updateScoreDiagnosisFields(question);
   question.updatedAt = new Date().toISOString();
 }
 
@@ -5092,15 +5426,95 @@ function gradeAnswer(question) {
   };
 }
 
+function updateScoreDiagnosisFields(question) {
+  const user = normalizeAnswerToArray(question.userAnswer);
+  const correct = normalizeAnswerToArray(question.correctAnswer);
+  const missedOptions = correct.filter((value) => !user.includes(value));
+  const overSelectedOptions = user.filter((value) => !correct.includes(value));
+  const multiSelectErrorType = isMultipleQuestion(question)
+    ? getMultiSelectErrorType(missedOptions, overSelectedOptions, user, correct)
+    : "";
+  const primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+
+  question.primaryWrongReason = primaryWrongReason;
+  question.secondaryWrongTags = normalizeStringArray(question.secondaryWrongTags);
+  question.perOptionJudgement = isMultipleQuestion(question) ? normalizePerOptionJudgement(question.perOptionJudgement) : {};
+  question.missedOptions = isMultipleQuestion(question) ? missedOptions : [];
+  question.overSelectedOptions = isMultipleQuestion(question) ? overSelectedOptions : [];
+  question.multiSelectErrorType = multiSelectErrorType;
+  question.selectedVsCorrectDiff = correct.length ? `已选 ${formatAnswer(user) || "未选"} / 正确 ${formatAnswer(correct)}` : "";
+  question.learningDiagnosis = buildLearningDiagnosis(question);
+  question.retestPriority = question.retestPriority || inferRetestPriority(question);
+  question.reviewDueAt = question.reviewDueAt || inferReviewDueAt(question);
+  question.recitationCardId = question.recitationCardId || getRecitationCardForQuestion(question)?.cardId || "";
+}
+
+function getMultiSelectErrorType(missedOptions, overSelectedOptions, user, correct) {
+  if (!missedOptions.length && !overSelectedOptions.length) {
+    return "";
+  }
+  if (!user.length || (missedOptions.length === correct.length && overSelectedOptions.length === user.length)) {
+    return "全错";
+  }
+  if (missedOptions.length && overSelectedOptions.length) {
+    return "漏选+错选";
+  }
+  return missedOptions.length ? "漏选" : "错选";
+}
+
+function buildLearningDiagnosis(question) {
+  const parts = [
+    question.primaryWrongReason || question.wrongReason || "",
+    ...(normalizeStringArray(question.secondaryWrongTags)),
+    question.multiSelectErrorType ? `多选${question.multiSelectErrorType}` : "",
+    perOptionJudgementSummary(question),
+  ].filter(Boolean);
+  return parts.join(" / ");
+}
+
+function perOptionJudgementSummary(question) {
+  const judgement = normalizePerOptionJudgement(question.perOptionJudgement);
+  const entries = Object.entries(judgement);
+  if (!entries.length) {
+    return "";
+  }
+  return entries.map(([label, value]) => `${label}${value}`).join("、");
+}
+
+function inferRetestPriority(question) {
+  if (question.status === "wrong" && isTangledQuestion(question)) {
+    return "高";
+  }
+  if (question.status === "wrong" || question.isHighRisk || question.isGuessed || question.multiSelectErrorType) {
+    return "中";
+  }
+  return "";
+}
+
+function inferReviewDueAt(question) {
+  if (question.status !== "wrong" && !question.isHighRisk && !question.isGuessed) {
+    return "";
+  }
+  const date = new Date();
+  date.setDate(date.getDate() + (question.status === "wrong" ? 1 : 3));
+  return date.toISOString().slice(0, 10);
+}
+
 function getQuestionMaxScore(question) {
   return isMultipleQuestion(question) ? 2 : 1;
 }
 
 function persistReviewMetadata(question) {
   question.riskReasons = Array.isArray(question.riskReasons) ? question.riskReasons : [];
+  question.primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+  question.secondaryWrongTags = normalizeStringArray(question.secondaryWrongTags);
   question.hesitationOptions = normalizeAnswerToArray(question.hesitationOptions);
+  question.eliminatedOption = normalizeAnswerToArray(question.eliminatedOption);
+  question.perOptionJudgement = isMultipleQuestion(question) ? normalizePerOptionJudgement(question.perOptionJudgement) : {};
   question.reviewNotes = normalizeReviewNotes(question.reviewNotes);
   question.wrongReason = question.riskReasons[0] || question.wrongReason || null;
+  question.primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+  question.learningDiagnosis = buildLearningDiagnosis(question);
   question.updatedAt = new Date().toISOString();
 }
 
@@ -5116,6 +5530,11 @@ function buildReviewSnapshot(question) {
     hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
     riskReasons: getQuestionRiskReasons(question),
     wrongReason: question.wrongReason ?? null,
+    primaryWrongReason: question.primaryWrongReason || question.wrongReason || "",
+    secondaryWrongTags: normalizeStringArray(question.secondaryWrongTags),
+    selectedVsCorrectDiff: question.selectedVsCorrectDiff || "",
+    multiSelectErrorType: question.multiSelectErrorType || "",
+    learningDiagnosis: question.learningDiagnosis || "",
     reviewNotes: normalizeReviewNotes(question.reviewNotes),
     createdAt: new Date().toISOString(),
   };
@@ -5128,6 +5547,23 @@ function migrateReviewFields() {
       isHighRisk: question.isHighRisk,
       confidenceStatus: question.confidenceStatus,
       hesitationOptions: question.hesitationOptions,
+      primaryWrongReason: question.primaryWrongReason,
+      secondaryWrongTags: question.secondaryWrongTags,
+      decisiveKeyword: question.decisiveKeyword,
+      wrongThinking: question.wrongThinking,
+      nextRule: question.nextRule,
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+      eachOptionReason: question.eachOptionReason,
+      eliminatedOption: question.eliminatedOption,
+      eliminationReason: question.eliminationReason,
+      perOptionJudgement: question.perOptionJudgement,
+      missedOptions: question.missedOptions,
+      overSelectedOptions: question.overSelectedOptions,
+      multiSelectErrorType: question.multiSelectErrorType,
+      learningDiagnosis: question.learningDiagnosis,
+      retestPriority: question.retestPriority,
+      reviewDueAt: question.reviewDueAt,
+      recitationCardId: question.recitationCardId,
       riskReasons: question.riskReasons,
       reviewNotes: question.reviewNotes,
       riskCertainCorrectStreak: question.riskCertainCorrectStreak,
@@ -5136,7 +5572,24 @@ function migrateReviewFields() {
     });
     question.isHighRisk = Boolean(question.isHighRisk);
     question.confidenceStatus = question.confidenceStatus || null;
-    question.hesitationOptions = normalizeAnswerToArray(question.hesitationOptions);
+    question.primaryWrongReason = question.primaryWrongReason || question.wrongReason || "";
+    question.secondaryWrongTags = normalizeStringArray(question.secondaryWrongTags);
+    question.hesitationOptions = question.hesitationOptions ?? "";
+    question.decisiveKeyword = question.decisiveKeyword || "";
+    question.wrongThinking = question.wrongThinking || "";
+    question.nextRule = question.nextRule || "";
+    question.selectedVsCorrectDiff = question.selectedVsCorrectDiff || "";
+    question.eachOptionReason = question.eachOptionReason || "";
+    question.eliminatedOption = question.eliminatedOption ?? "";
+    question.eliminationReason = question.eliminationReason || "";
+    question.perOptionJudgement = isMultipleQuestion(question) ? normalizePerOptionJudgement(question.perOptionJudgement) : {};
+    question.missedOptions = normalizeAnswerToArray(question.missedOptions);
+    question.overSelectedOptions = normalizeAnswerToArray(question.overSelectedOptions);
+    question.multiSelectErrorType = question.multiSelectErrorType || "";
+    question.learningDiagnosis = question.learningDiagnosis || "";
+    question.retestPriority = question.retestPriority || "";
+    question.reviewDueAt = question.reviewDueAt || "";
+    question.recitationCardId = question.recitationCardId || getRecitationCardForQuestion(question)?.cardId || "";
     question.riskReasons = Array.isArray(question.riskReasons)
       ? question.riskReasons.filter(Boolean)
       : question.wrongReason
@@ -5150,6 +5603,23 @@ function migrateReviewFields() {
       isHighRisk: question.isHighRisk,
       confidenceStatus: question.confidenceStatus,
       hesitationOptions: question.hesitationOptions,
+      primaryWrongReason: question.primaryWrongReason,
+      secondaryWrongTags: question.secondaryWrongTags,
+      decisiveKeyword: question.decisiveKeyword,
+      wrongThinking: question.wrongThinking,
+      nextRule: question.nextRule,
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+      eachOptionReason: question.eachOptionReason,
+      eliminatedOption: question.eliminatedOption,
+      eliminationReason: question.eliminationReason,
+      perOptionJudgement: question.perOptionJudgement,
+      missedOptions: question.missedOptions,
+      overSelectedOptions: question.overSelectedOptions,
+      multiSelectErrorType: question.multiSelectErrorType,
+      learningDiagnosis: question.learningDiagnosis,
+      retestPriority: question.retestPriority,
+      reviewDueAt: question.reviewDueAt,
+      recitationCardId: question.recitationCardId,
       riskReasons: question.riskReasons,
       reviewNotes: question.reviewNotes,
       riskCertainCorrectStreak: question.riskCertainCorrectStreak,
@@ -5182,6 +5652,16 @@ function refreshAnsweredQuestionScores() {
       isHighRisk: question.isHighRisk,
       confidenceStatus: question.confidenceStatus,
       hesitationOptions: question.hesitationOptions,
+      primaryWrongReason: question.primaryWrongReason,
+      secondaryWrongTags: question.secondaryWrongTags,
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+      missedOptions: question.missedOptions,
+      overSelectedOptions: question.overSelectedOptions,
+      multiSelectErrorType: question.multiSelectErrorType,
+      learningDiagnosis: question.learningDiagnosis,
+      retestPriority: question.retestPriority,
+      reviewDueAt: question.reviewDueAt,
+      recitationCardId: question.recitationCardId,
       riskReasons: question.riskReasons,
       riskCertainCorrectStreak: question.riskCertainCorrectStreak,
       secondReviewStillUncertain: question.secondReviewStillUncertain,
@@ -5198,6 +5678,16 @@ function refreshAnsweredQuestionScores() {
       isHighRisk: question.isHighRisk,
       confidenceStatus: question.confidenceStatus,
       hesitationOptions: question.hesitationOptions,
+      primaryWrongReason: question.primaryWrongReason,
+      secondaryWrongTags: question.secondaryWrongTags,
+      selectedVsCorrectDiff: question.selectedVsCorrectDiff,
+      missedOptions: question.missedOptions,
+      overSelectedOptions: question.overSelectedOptions,
+      multiSelectErrorType: question.multiSelectErrorType,
+      learningDiagnosis: question.learningDiagnosis,
+      retestPriority: question.retestPriority,
+      reviewDueAt: question.reviewDueAt,
+      recitationCardId: question.recitationCardId,
       riskReasons: question.riskReasons,
       riskCertainCorrectStreak: question.riskCertainCorrectStreak,
       secondReviewStillUncertain: question.secondReviewStillUncertain,
@@ -5446,11 +5936,28 @@ function getQuestionProgressSnapshot(question) {
       maxScore: null,
       isWrong: false,
       wrongReason: null,
+      primaryWrongReason: "",
+      secondaryWrongTags: [],
       isGuessed: false,
       guessReason: null,
       isHighRisk: false,
       confidenceStatus: null,
-      hesitationOptions: [],
+      hesitationOptions: "",
+      decisiveKeyword: "",
+      wrongThinking: "",
+      nextRule: "",
+      selectedVsCorrectDiff: "",
+      eachOptionReason: "",
+      eliminatedOption: "",
+      eliminationReason: "",
+      perOptionJudgement: {},
+      missedOptions: [],
+      overSelectedOptions: [],
+      multiSelectErrorType: "",
+      learningDiagnosis: "",
+      retestPriority: "",
+      reviewDueAt: "",
+      recitationCardId: "",
       riskReasons: [],
       reviewNotes: normalizeReviewNotes(null),
       riskCertainCorrectStreak: 0,
@@ -5467,11 +5974,28 @@ function getQuestionProgressSnapshot(question) {
     maxScore: question.maxScore ?? null,
     isWrong: question.isWrong ?? false,
     wrongReason: question.wrongReason ?? null,
+    primaryWrongReason: question.primaryWrongReason || question.wrongReason || "",
+    secondaryWrongTags: normalizeStringArray(question.secondaryWrongTags),
     isGuessed: question.isGuessed ?? false,
     guessReason: question.guessReason ?? null,
     isHighRisk: question.isHighRisk ?? false,
     confidenceStatus: question.confidenceStatus ?? null,
-    hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
+    hesitationOptions: question.hesitationOptions ?? "",
+    decisiveKeyword: question.decisiveKeyword || "",
+    wrongThinking: question.wrongThinking || "",
+    nextRule: question.nextRule || "",
+    selectedVsCorrectDiff: question.selectedVsCorrectDiff || "",
+    eachOptionReason: question.eachOptionReason || "",
+    eliminatedOption: question.eliminatedOption || "",
+    eliminationReason: question.eliminationReason || "",
+    perOptionJudgement: normalizePerOptionJudgement(question.perOptionJudgement),
+    missedOptions: normalizeAnswerToArray(question.missedOptions),
+    overSelectedOptions: normalizeAnswerToArray(question.overSelectedOptions),
+    multiSelectErrorType: question.multiSelectErrorType || "",
+    learningDiagnosis: question.learningDiagnosis || "",
+    retestPriority: question.retestPriority || "",
+    reviewDueAt: question.reviewDueAt || "",
+    recitationCardId: question.recitationCardId || "",
     riskReasons: Array.isArray(question.riskReasons) ? question.riskReasons : [],
     reviewNotes: normalizeReviewNotes(question.reviewNotes),
     riskCertainCorrectStreak: question.riskCertainCorrectStreak ?? 0,
@@ -6392,6 +6916,27 @@ function normalizeAnswerToArray(value) {
   return [text];
 }
 
+function normalizeStringArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  return String(value || "")
+    .split(/[，,、\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizePerOptionJudgement(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([label, judgement]) => [String(label || "").trim().toUpperCase(), String(judgement || "").trim()])
+      .filter(([label, judgement]) => label && PER_OPTION_JUDGEMENT_VALUES.includes(judgement))
+  );
+}
+
 function isMultipleQuestion(question) {
   const value = String(question.type).toLowerCase();
   return value.includes("multi") || value.includes("多选");
@@ -7083,6 +7628,7 @@ function toWrongQuestionExportItem(question) {
     confidenceStatus: question.confidenceStatus,
     hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
     reviewNotes: normalizeReviewNotes(question.reviewNotes),
+    ...scoreDiagnosisExportFields(question),
     updatedAt: question.updatedAt,
   };
 }
@@ -7106,6 +7652,7 @@ function toGuessQuestionExportItem(question) {
     hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),
     riskReasons: getQuestionRiskReasons(question),
     reviewNotes: normalizeReviewNotes(question.reviewNotes),
+    ...scoreDiagnosisExportFields(question),
     updatedAt: question.updatedAt,
   };
 }
@@ -7130,7 +7677,30 @@ function toRiskQuestionExportItem(question) {
     reviewNotes: normalizeReviewNotes(question.reviewNotes),
     riskCertainCorrectStreak: question.riskCertainCorrectStreak || 0,
     secondReviewStillUncertain: Boolean(question.secondReviewStillUncertain),
+    ...scoreDiagnosisExportFields(question),
     updatedAt: question.updatedAt,
+  };
+}
+
+function scoreDiagnosisExportFields(question) {
+  return {
+    primaryWrongReason: question.primaryWrongReason || question.wrongReason || "",
+    secondaryWrongTags: normalizeStringArray(question.secondaryWrongTags),
+    decisiveKeyword: question.decisiveKeyword || "",
+    wrongThinking: question.wrongThinking || "",
+    nextRule: question.nextRule || "",
+    selectedVsCorrectDiff: question.selectedVsCorrectDiff || "",
+    eachOptionReason: question.eachOptionReason || "",
+    eliminatedOption: normalizeAnswerToArray(question.eliminatedOption),
+    eliminationReason: question.eliminationReason || "",
+    perOptionJudgement: normalizePerOptionJudgement(question.perOptionJudgement),
+    missedOptions: normalizeAnswerToArray(question.missedOptions),
+    overSelectedOptions: normalizeAnswerToArray(question.overSelectedOptions),
+    multiSelectErrorType: question.multiSelectErrorType || "",
+    learningDiagnosis: question.learningDiagnosis || "",
+    retestPriority: question.retestPriority || "",
+    reviewDueAt: question.reviewDueAt || "",
+    recitationCardId: question.recitationCardId || "",
   };
 }
 
