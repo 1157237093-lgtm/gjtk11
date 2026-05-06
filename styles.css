@@ -277,6 +277,17 @@ button:hover,
   white-space: nowrap;
 }
 
+.recitation-card-top .recitation-meta-chip {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.recitation-meta-chip strong {
+  margin-right: 4px;
+  color: var(--ink);
+}
+
 .recitation-card-heading {
   align-items: flex-start;
   gap: 12px;
