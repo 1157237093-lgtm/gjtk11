@@ -3,6 +3,7 @@
   --panel: #fffdf8;
   --panel-strong: #fff8ee;
   --text: #22201b;
+  --ink: var(--text);
   --muted: #6d665c;
   --line: #d8cdbd;
   --accent: #be5b2f;
@@ -275,6 +276,17 @@ button:hover,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recitation-card-top .recitation-meta-chip {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.recitation-meta-chip strong {
+  margin-right: 4px;
+  color: var(--ink);
 }
 
 .recitation-card-heading {

@@ -38,7 +38,7 @@ const RECITATION_CATEGORIES = [
   "错题回流库",
   "考前速记库",
 ];
-const RECITATION_SOURCES = ["手动导入", "错题生成", "错题回流", "错题自动生成", "考前速记"];
+const RECITATION_SOURCES = ["手动导入", "ChatGPT JSON", "错题生成", "错题回流", "错题自动生成", "考前速记"];
 const RECITATION_MASTERY_LABELS = ["未背", "看过但不熟", "能背出", "做题能用上", "稳定掌握", "长期掌握"];
 const RECITATION_REVIEW_ACTIONS = [
   { key: "again", label: "不会", level: 0, days: 0 },
@@ -237,6 +237,7 @@ const elements = {
   recitationImportPreview: document.getElementById("recitation-import-preview"),
   recitationDuplicatePolicy: document.getElementById("recitation-duplicate-policy"),
   recitationExportScope: document.getElementById("recitation-export-scope"),
+  importChatGPTRecitationJsonButton: document.getElementById("import-chatgpt-recitation-json"),
   abnormalSummary: document.getElementById("abnormal-summary"),
   abnormalList: document.getElementById("abnormal-list"),
   emptyAbnormal: document.getElementById("empty-abnormal"),
@@ -582,6 +583,24 @@ function bindEvents() {
     }
   });
 
+  elements.importChatGPTRecitationJsonButton?.addEventListener("click", async () => {
+    try {
+      const file = await pickChatGPTRecitationJsonFile();
+      if (!file) {
+        return;
+      }
+      const result = await importChatGPTRecitationJsonFile(file);
+      flashMessage(
+        `已导入 ChatGPT 背诵卡：新增 ${result.importedCount} 张，更新 ${result.updatedCount} 张，失败 ${result.failedCount} 张。`,
+        result.importedCount + result.updatedCount === 0 && result.failedCount > 0
+      );
+      persistStore();
+      renderApp();
+    } catch (error) {
+      flashMessage(`导入 ChatGPT 背诵卡 JSON 失败：${error.message}`, true);
+    }
+  });
+
   document.getElementById("parse-recitation-text").addEventListener("click", () => {
     try {
       const text = elements.recitationImportText.value;
@@ -912,6 +931,14 @@ async function importRecitationCardsFile(file) {
   return prepareRecitationImport(text, file.name || "本地文件");
 }
 
+async function importChatGPTRecitationJsonFile(file) {
+  if (!/\.json$/i.test(file.name || "") && file.type && file.type !== "application/json") {
+    throw new Error("请选择 ChatGPT 背诵卡 JSON 文件。");
+  }
+  const text = await file.text();
+  return importChatGPTRecitationCardsDirect(text, file.name || "ChatGPT 背诵卡 JSON");
+}
+
 async function readImportPayload(file, kind) {
   const isPdf = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
   if (!isPdf) {
@@ -1122,6 +1149,27 @@ async function pickRecitationFile() {
             accept: {
               "text/plain": [".txt"],
               "text/markdown": [".md"],
+              "application/json": [".json"],
+            },
+          },
+        ],
+      });
+      return fileHandle ? fileHandle.getFile() : null;
+    }
+
+    return pickImportFileWithInput(elements.recitationFileInput);
+  });
+}
+
+async function pickChatGPTRecitationJsonFile() {
+  return withFilePickerLock(async () => {
+    if (isFilePickerSupported()) {
+      const [fileHandle] = await window.showOpenFilePicker({
+        multiple: false,
+        types: [
+          {
+            description: "ChatGPT 背诵卡 JSON",
+            accept: {
               "application/json": [".json"],
             },
           },
@@ -1439,10 +1487,10 @@ function recitationCardMarkup(card) {
     <article class="recitation-card ${focused ? "is-focused" : ""}">
       ${focused ? `<div class="recitation-focus-banner">刚生成的背诵卡片</div>` : ""}
       <div class="recitation-card-top">
-        <span>题号 ${escapeHtml(card.questionNo ? `Q${card.questionNo}` : "未填写")}</span>
-        <span>来源 ${escapeHtml(compactText(sourceName, 36))}</span>
-        <span>正确方向 ${escapeHtml(compactText(correctDirection, 36))}</span>
-        <span>标签 ${escapeHtml(compactText(tagText, 42))}</span>
+        ${recitationTopMeta("题号", card.questionNo ? `Q${card.questionNo}` : "未填写")}
+        ${recitationTopMeta("来源", sourceName)}
+        ${recitationTopMeta("正确方向", correctDirection)}
+        ${recitationTopMeta("标签", tagText)}
       </div>
       <div class="paper-card-header recitation-card-heading">
         <div>
@@ -1503,6 +1551,19 @@ function recitationPreviewRow(label, value) {
       <strong>${escapeHtml(label)}：</strong>
       <span>${escapeHtml(preview)}${needsExpand ? `<details class="inline-expand"><summary>展开</summary><p>${escapeHtml(text)}</p></details>` : ""}</span>
     </div>
+  `;
+}
+
+function recitationTopMeta(label, value) {
+  const text = String(value || "未填写").replace(/\s+/g, " ").trim() || "未填写";
+  const preview = compactText(text, 80);
+  const needsExpand = text.length > 80;
+  return `
+    <span class="recitation-meta-chip">
+      <strong>${escapeHtml(label)}</strong>
+      ${escapeHtml(preview)}
+      ${needsExpand ? `<details class="inline-expand"><summary>展开</summary><p>${escapeHtml(text)}</p></details>` : ""}
+    </span>
   `;
 }
 
@@ -1986,6 +2047,15 @@ function repairAndReturnAbnormalItem(item) {
     },
     { paperId: item.paperId, paperTitle: item.paperTitle || paper?.paperTitle || item.paperId }
   );
+  const parsedIssues = validateParsedQuestion(question);
+  if (parsedIssues.length) {
+    item.issues = uniqueValues(parsedIssues);
+    item.abnormalType = classifyAbnormalIssues(item).abnormalType;
+    item.severity = "hard";
+    item.updatedAt = new Date().toISOString();
+    item.repairHistory.push({ action: "return-failed", issues: item.issues, at: item.updatedAt });
+    return { ok: false, issues: item.issues };
+  }
   const existing = state.store.questions.find((row) => questionKey(row) === questionKey(question));
   const preserved = getQuestionProgressSnapshot(existing);
   state.store.questions = state.store.questions.filter((row) => questionKey(row) !== questionKey(question));
@@ -3474,7 +3544,7 @@ function parseChatGPTRecitationCardImport(rows, sourceFile) {
         nextReviewDate: rawCard.nextReviewAt,
         lastReviewDate: rawCard.lastReviewedAt,
         sourceFile: rawCard.sourceFile || sourceFile || "ChatGPT 背诵卡 JSON",
-        source: rawCard.source || "手动导入",
+        source: rawCard.source || "ChatGPT JSON",
       })
     );
   });
@@ -3739,6 +3809,35 @@ function prepareRecitationImport(text, sourceFile) {
   return { parsedCount: normalizedCards.length, failedCount: failedCards.length };
 }
 
+function importChatGPTRecitationCardsDirect(text, sourceFile = "ChatGPT 背诵卡 JSON") {
+  const parsed = typeof text === "string" ? JSON.parse(text) : text;
+  const rows = Array.isArray(parsed?.cards) ? parsed.cards : [];
+  if (!rows.length) {
+    throw new Error("JSON 中没有找到 cards 数组。");
+  }
+
+  const { cards, failedCards } = parseChatGPTRecitationCardImport(rows, parsed?.source || sourceFile);
+  const normalizedCards = cards.map((card) =>
+    normalizeRecitationCard({ ...card, sourceFile: card.sourceFile || sourceFile, source: card.source || "ChatGPT JSON" })
+  );
+  let importedCount = 0;
+  let updatedCount = 0;
+
+  normalizedCards.forEach((card) => {
+    const duplicate = findDuplicateChatGPTRecitationCard(card);
+    if (!duplicate) {
+      upsertRecitationCard(card);
+      importedCount += 1;
+      return;
+    }
+    upsertRecitationCard(mergeRecitationCards(duplicate, { ...card, cardId: duplicate.cardId }));
+    updatedCount += 1;
+  });
+
+  const failedCount = addFailedRecitationCardsToAbnormal(failedCards, sourceFile);
+  return { importedCount, updatedCount, failedCount };
+}
+
 function applyRecitationImport(policy = "merge") {
   const cards = state.recitationImport.pendingCards || [];
   const failedCards = state.recitationImport.pendingFailedCards || [];
@@ -3803,6 +3902,15 @@ function findDuplicateRecitationCard(card) {
     if (existing.mnemonic && card.mnemonic && existing.mnemonic === card.mnemonic) return true;
     if (existing.sourceText && card.sourceText && existing.sourceText === card.sourceText) return true;
     return keywordSimilarity(existing.keywords, card.keywords) >= 0.72;
+  });
+}
+
+function findDuplicateChatGPTRecitationCard(card) {
+  return getRecitationCards().find((existing) => {
+    if (card.cardId && existing.cardId === card.cardId) return true;
+    if (card.id && (existing.id === card.id || existing.cardId === card.id)) return true;
+    if (card.sourceQuestionId && existing.sourceQuestionId === card.sourceQuestionId) return true;
+    return false;
   });
 }
 
