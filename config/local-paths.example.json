@@ -1,0 +1,12 @@
+{
+  "rootDir": "/private/example/source-root",
+  "paperDir": "/private/example/source-root/paper-pdfs",
+  "answerDir": "/private/example/source-root/answer-pdfs",
+  "historicalTruthFile": "/private/example/source-root/historical-paper.pdf",
+  "outputBundle": "/private/example/project/autoload-data.js",
+  "outputReport": "/private/example/project/data/autoload-report.json",
+  "verifyFiles": {
+    "q1": "/private/example/sample/paper.pdf",
+    "a1": "/private/example/sample/answer.pdf"
+  }
+}

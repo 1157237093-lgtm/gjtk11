@@ -1,0 +1,13 @@
+{
+  "name": "gjtk11",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-fixed-import-bundle.mjs",
+    "verify-import": "node scripts/verify-import.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^4.10.38"
+  }
+}

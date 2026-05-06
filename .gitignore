@@ -1,0 +1,14 @@
+config/local-paths.json
+autoload-data.js
+data/
+*.pdf
+*.PDF
+*.jsonl
+wrong-*.json
+mistake-*.json
+recitation-*.json
+cards-*.json
+exports/
+*.local
+.DS_Store
+node_modules/

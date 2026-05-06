@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>题库练习台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>题库练习台</h1>
+        <p id="storageNote">数据只保存在当前浏览器。</p>
+      </div>
+      <div class="actions">
+        <button id="demoBtn" type="button">载入演示</button>
+        <button id="exportBtn" type="button">导出 JSON</button>
+        <button id="clearBtn" type="button" class="danger">清空本地</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel import-panel" aria-labelledby="importTitle">
+        <div class="section-head">
+          <div>
+            <h2 id="importTitle">导入</h2>
+            <p>支持 JSON 题库、题本 PDF 和答案 PDF。PDF 解析在浏览器内完成。</p>
+          </div>
+        </div>
+        <div class="dropzone" id="dropzone">
+          <input id="fileInput" type="file" multiple accept=".json,.pdf,application/json,application/pdf" />
+          <label for="fileInput">选择文件或拖入这里</label>
+          <span>不会上传到服务器</span>
+        </div>
+        <div class="import-controls">
+          <label>
+            PDF 类型
+            <select id="pdfKind">
+              <option value="paper">题本 PDF</option>
+              <option value="answer">答案 PDF</option>
+            </select>
+          </label>
+          <label>
+            导入到
+            <select id="targetPaper"></select>
+          </label>
+        </div>
+        <ul id="importLog" class="log" aria-live="polite"></ul>
+      </section>
+
+      <section class="panel stats-panel" aria-label="题库统计">
+        <div class="stat"><strong id="paperCount">0</strong><span>题本</span></div>
+        <div class="stat"><strong id="questionCount">0</strong><span>题目</span></div>
+        <div class="stat"><strong id="doneCount">0</strong><span>已做</span></div>
+        <div class="stat"><strong id="wrongCount">0</strong><span>错题</span></div>
+      </section>
+
+      <section class="panel diagnosis-panel" aria-labelledby="diagnosisTitle">
+        <div class="section-head compact">
+          <div>
+            <h2 id="diagnosisTitle">个人失分看板</h2>
+            <p>按当前本地练习记录统计。</p>
+          </div>
+        </div>
+        <div id="diagnosisGrid" class="diagnosis-grid"></div>
+      </section>
+
+      <section class="practice">
+        <aside class="sidebar panel" aria-label="题本列表">
+          <h2>题本</h2>
+          <div id="paperList" class="paper-list"></div>
+        </aside>
+
+        <section class="question-panel panel" aria-labelledby="practiceTitle">
+          <div class="section-head">
+            <div>
+              <h2 id="practiceTitle">练习</h2>
+              <p id="questionMeta">尚未导入题目</p>
+            </div>
+            <div class="nav-actions">
+              <button id="prevBtn" type="button" aria-label="上一题">←</button>
+              <button id="nextBtn" type="button" aria-label="下一题">→</button>
+            </div>
+          </div>
+
+          <article id="emptyState" class="empty">
+            <h3>空题库</h3>
+            <p>导入自己的 PDF / JSON 后即可开始练习，也可以先载入演示数据查看界面。</p>
+          </article>
+
+          <article id="questionView" class="question-view hidden">
+            <div class="question-stem" id="questionStem"></div>
+            <div id="optionList" class="options"></div>
+            <section class="training-panel" aria-label="提分训练记录">
+              <div class="field-grid">
+                <label>
+                  作答状态
+                  <select id="confidenceStatus">
+                    <option value="确定">确定</option>
+                    <option value="两个选项纠结">两个选项纠结</option>
+                    <option value="多个选项纠结">多个选项纠结</option>
+                    <option value="蒙的">蒙的</option>
+                  </select>
+                </label>
+                <label>
+                  主错因
+                  <select id="primaryWrongReason">
+                    <option value="">未归类</option>
+                    <option value="审题偏差">审题偏差</option>
+                    <option value="概念混淆">概念混淆</option>
+                    <option value="材料定位错误">材料定位错误</option>
+                    <option value="关键词误判">关键词误判</option>
+                    <option value="多选漏选">多选漏选</option>
+                    <option value="多选错选">多选错选</option>
+                    <option value="记忆缺口">记忆缺口</option>
+                  </select>
+                </label>
+                <label>
+                  易混标签
+                  <input id="secondaryWrongTags" type="text" placeholder="逗号分隔" />
+                </label>
+                <label>
+                  纠结选项
+                  <input id="hesitationOptions" type="text" placeholder="如 A/B 或 A,C,D" />
+                </label>
+                <label>
+                  定胜关键词
+                  <input id="decisiveKeyword" type="text" />
+                </label>
+                <label>
+                  淘汰项
+                  <input id="eliminatedOption" type="text" placeholder="如 B" />
+                </label>
+              </div>
+              <div id="twoChoiceFields" class="field-grid hidden">
+                <label>
+                  各选项理由
+                  <textarea id="eachOptionReason" rows="2"></textarea>
+                </label>
+                <label>
+                  淘汰理由
+                  <textarea id="eliminationReason" rows="2"></textarea>
+                </label>
+              </div>
+              <label class="wide-field">
+                错误思路
+                <textarea id="wrongThinking" rows="2"></textarea>
+              </label>
+              <label class="wide-field">
+                下次规则
+                <textarea id="nextRule" rows="2"></textarea>
+              </label>
+              <div id="perOptionJudgement" class="per-option"></div>
+            </section>
+            <div class="answer-row">
+              <button id="showAnswerBtn" type="button">查看答案</button>
+              <button id="markWrongBtn" type="button">加入错题</button>
+              <button id="markCardBtn" type="button">生成规则卡</button>
+            </div>
+            <div id="answerBox" class="answer-box hidden"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+    <script src="./src/main.js" type="module"></script>
+  </body>
+</html>
