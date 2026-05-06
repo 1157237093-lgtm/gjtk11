@@ -3,6 +3,7 @@
   --panel: #fffdf8;
   --panel-strong: #fff8ee;
   --text: #22201b;
+  --ink: var(--text);
   --muted: #6d665c;
   --line: #d8cdbd;
   --accent: #be5b2f;
