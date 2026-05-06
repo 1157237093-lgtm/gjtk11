@@ -78680,7 +78680,7 @@ ${text.slice(0, 2e3)}`;
     "\u9519\u9898\u56DE\u6D41\u5E93",
     "\u8003\u524D\u901F\u8BB0\u5E93"
   ];
-  var RECITATION_SOURCES = ["\u624B\u52A8\u5BFC\u5165", "\u9519\u9898\u751F\u6210", "\u9519\u9898\u56DE\u6D41", "\u9519\u9898\u81EA\u52A8\u751F\u6210", "\u8003\u524D\u901F\u8BB0"];
+  var RECITATION_SOURCES = ["\u624B\u52A8\u5BFC\u5165", "ChatGPT JSON", "\u9519\u9898\u751F\u6210", "\u9519\u9898\u56DE\u6D41", "\u9519\u9898\u81EA\u52A8\u751F\u6210", "\u8003\u524D\u901F\u8BB0"];
   var RECITATION_MASTERY_LABELS = ["\u672A\u80CC", "\u770B\u8FC7\u4F46\u4E0D\u719F", "\u80FD\u80CC\u51FA", "\u505A\u9898\u80FD\u7528\u4E0A", "\u7A33\u5B9A\u638C\u63E1", "\u957F\u671F\u638C\u63E1"];
   var RECITATION_REVIEW_ACTIONS = [
     { key: "again", label: "\u4E0D\u4F1A", level: 0, days: 0 },
@@ -78862,6 +78862,7 @@ ${text.slice(0, 2e3)}`;
     paperFileInput: document.getElementById("paper-file-input"),
     answerFileInput: document.getElementById("answer-file-input"),
     recitationFileInput: document.getElementById("recitation-file-input"),
+    chatgptRecitationJsonInput: document.getElementById("chatgpt-recitation-json-input"),
     recitationSummary: document.getElementById("recitation-summary"),
     recitationList: document.getElementById("recitation-list"),
     emptyRecitation: document.getElementById("empty-recitation"),
@@ -78876,6 +78877,7 @@ ${text.slice(0, 2e3)}`;
     recitationImportPreview: document.getElementById("recitation-import-preview"),
     recitationDuplicatePolicy: document.getElementById("recitation-duplicate-policy"),
     recitationExportScope: document.getElementById("recitation-export-scope"),
+    importChatGPTRecitationJsonButton: document.getElementById("import-chatgpt-recitation-json"),
     abnormalSummary: document.getElementById("abnormal-summary"),
     abnormalList: document.getElementById("abnormal-list"),
     emptyAbnormal: document.getElementById("empty-abnormal"),
@@ -78915,6 +78917,12 @@ ${text.slice(0, 2e3)}`;
     });
     elements.recitationFileInput.addEventListener("change", async (event) => {
       event.target.value = "";
+    });
+    elements.chatgptRecitationJsonInput?.addEventListener("change", async (event) => {
+      await handleChatGPTRecitationJsonInputChange(event);
+    });
+    elements.chatgptRecitationJsonInput?.addEventListener("cancel", () => {
+      flashMessage("\u5DF2\u53D6\u6D88\u9009\u62E9 ChatGPT \u80CC\u8BF5\u5361 JSON\u3002");
     });
     elements.abnormalFileInput?.addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
@@ -79169,6 +79177,15 @@ ${text.slice(0, 2e3)}`;
       } catch (error) {
         flashMessage(`\u5BFC\u5165\u80CC\u8BF5\u5361\u7247\u5931\u8D25\uFF1A${error.message}`, true);
       }
+    });
+    elements.importChatGPTRecitationJsonButton?.addEventListener("click", async () => {
+      const input = elements.chatgptRecitationJsonInput;
+      if (!input) {
+        flashMessage("\u672A\u627E\u5230 ChatGPT \u80CC\u8BF5\u5361 JSON \u6587\u4EF6\u9009\u62E9\u5668\u3002", true);
+        return;
+      }
+      input.value = "";
+      input.click();
     });
     document.getElementById("parse-recitation-text").addEventListener("click", () => {
       try {
@@ -79451,6 +79468,33 @@ ${text.slice(0, 2e3)}`;
   async function importRecitationCardsFile(file) {
     const text = await file.text();
     return prepareRecitationImport(text, file.name || "\u672C\u5730\u6587\u4EF6");
+  }
+  async function importChatGPTRecitationJsonFile(file) {
+    if (!/\.json$/i.test(file.name || "")) {
+      throw new Error("\u8BF7\u9009\u62E9 .json \u6587\u4EF6\u3002");
+    }
+    const text = await file.text();
+    return importChatGPTRecitationCardsDirect(text, file.name || "ChatGPT \u80CC\u8BF5\u5361 JSON");
+  }
+  async function handleChatGPTRecitationJsonInputChange(event) {
+    const input = event.target;
+    const file = input.files?.[0] || null;
+    input.value = "";
+    if (!file) {
+      flashMessage("\u5DF2\u53D6\u6D88\u9009\u62E9 ChatGPT \u80CC\u8BF5\u5361 JSON\u3002");
+      return;
+    }
+    try {
+      const result = await importChatGPTRecitationJsonFile(file);
+      flashMessage(
+        `\u5DF2\u5BFC\u5165 ChatGPT \u80CC\u8BF5\u5361\uFF1A\u65B0\u589E ${result.importedCount} \u5F20\uFF0C\u66F4\u65B0 ${result.updatedCount} \u5F20\uFF0C\u5931\u8D25 ${result.failedCount} \u5F20\u3002`,
+        result.importedCount + result.updatedCount === 0 && result.failedCount > 0
+      );
+      persistStore();
+      renderApp();
+    } catch (error) {
+      flashMessage(error.message || "\u5BFC\u5165 ChatGPT \u80CC\u8BF5\u5361 JSON \u5931\u8D25\u3002", true);
+    }
   }
   async function readImportPayload(file, kind) {
     const isPdf = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
@@ -79896,10 +79940,10 @@ ${text.slice(0, 2e3)}`;
     <article class="recitation-card ${focused ? "is-focused" : ""}">
       ${focused ? `<div class="recitation-focus-banner">\u521A\u751F\u6210\u7684\u80CC\u8BF5\u5361\u7247</div>` : ""}
       <div class="recitation-card-top">
-        <span>\u9898\u53F7 ${escapeHtml(card.questionNo ? `Q${card.questionNo}` : "\u672A\u586B\u5199")}</span>
-        <span>\u6765\u6E90 ${escapeHtml(compactText(sourceName, 36))}</span>
-        <span>\u6B63\u786E\u65B9\u5411 ${escapeHtml(compactText(correctDirection, 36))}</span>
-        <span>\u6807\u7B7E ${escapeHtml(compactText(tagText, 42))}</span>
+        ${recitationTopMeta("\u9898\u53F7", card.questionNo ? `Q${card.questionNo}` : "\u672A\u586B\u5199")}
+        ${recitationTopMeta("\u6765\u6E90", sourceName)}
+        ${recitationTopMeta("\u6B63\u786E\u65B9\u5411", correctDirection)}
+        ${recitationTopMeta("\u6807\u7B7E", tagText)}
       </div>
       <div class="paper-card-header recitation-card-heading">
         <div>
@@ -79955,6 +79999,18 @@ ${text.slice(0, 2e3)}`;
       <strong>${escapeHtml(label)}\uFF1A</strong>
       <span>${escapeHtml(preview)}${needsExpand ? `<details class="inline-expand"><summary>\u5C55\u5F00</summary><p>${escapeHtml(text)}</p></details>` : ""}</span>
     </div>
+  `;
+  }
+  function recitationTopMeta(label, value) {
+    const text = String(value || "\u672A\u586B\u5199").replace(/\s+/g, " ").trim() || "\u672A\u586B\u5199";
+    const preview = compactText(text, 80);
+    const needsExpand = text.length > 80;
+    return `
+    <span class="recitation-meta-chip">
+      <strong>${escapeHtml(label)}</strong>
+      ${escapeHtml(preview)}
+      ${needsExpand ? `<details class="inline-expand"><summary>\u5C55\u5F00</summary><p>${escapeHtml(text)}</p></details>` : ""}
+    </span>
   `;
   }
   function bindRecitationEvents(cards) {
@@ -80368,6 +80424,15 @@ ${text.slice(0, 2e3)}`;
       },
       { paperId: item.paperId, paperTitle: item.paperTitle || paper?.paperTitle || item.paperId }
     );
+    const parsedIssues = validateParsedQuestion(question);
+    if (parsedIssues.length) {
+      item.issues = uniqueValues(parsedIssues);
+      item.abnormalType = classifyAbnormalIssues(item).abnormalType;
+      item.severity = "hard";
+      item.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      item.repairHistory.push({ action: "return-failed", issues: item.issues, at: item.updatedAt });
+      return { ok: false, issues: item.issues };
+    }
     const existing = state.store.questions.find((row) => questionKey(row) === questionKey(question));
     const preserved = getQuestionProgressSnapshot(existing);
     state.store.questions = state.store.questions.filter((row) => questionKey(row) !== questionKey(question));
@@ -81687,7 +81752,7 @@ ${data.nextRule}`
           nextReviewDate: rawCard.nextReviewAt,
           lastReviewDate: rawCard.lastReviewedAt,
           sourceFile: rawCard.sourceFile || sourceFile || "ChatGPT \u80CC\u8BF5\u5361 JSON",
-          source: rawCard.source || "\u624B\u52A8\u5BFC\u5165"
+          source: rawCard.source || "ChatGPT JSON"
         })
       );
     });
@@ -81932,6 +81997,34 @@ ${block}`) || "\u6613\u6DF7\u8BCD\u5E93",
     };
     return { parsedCount: normalizedCards.length, failedCount: failedCards.length };
   }
+  function importChatGPTRecitationCardsDirect(text, sourceFile = "ChatGPT \u80CC\u8BF5\u5361 JSON") {
+    const parsed = typeof text === "string" ? JSON.parse(text) : text;
+    if (!Array.isArray(parsed?.cards)) {
+      throw new Error("JSON \u4E2D\u6CA1\u6709\u627E\u5230 cards \u6570\u7EC4\u3002");
+    }
+    const rows = parsed.cards;
+    if (!rows.length) {
+      throw new Error("JSON \u4E2D\u6CA1\u6709\u627E\u5230 cards \u6570\u7EC4\u3002");
+    }
+    const { cards, failedCards } = parseChatGPTRecitationCardImport(rows, parsed?.source || sourceFile);
+    const normalizedCards = cards.map(
+      (card) => normalizeRecitationCard({ ...card, sourceFile: card.sourceFile || sourceFile, source: card.source || "ChatGPT JSON" })
+    );
+    let importedCount = 0;
+    let updatedCount = 0;
+    normalizedCards.forEach((card) => {
+      const duplicate = findDuplicateChatGPTRecitationCard(card);
+      if (!duplicate) {
+        upsertRecitationCard(card);
+        importedCount += 1;
+        return;
+      }
+      upsertRecitationCard(mergeRecitationCards(duplicate, { ...card, cardId: duplicate.cardId }));
+      updatedCount += 1;
+    });
+    const failedCount = addFailedRecitationCardsToAbnormal(failedCards, sourceFile);
+    return { importedCount, updatedCount, failedCount };
+  }
   function applyRecitationImport(policy = "merge") {
     const cards = state.recitationImport.pendingCards || [];
     const failedCards = state.recitationImport.pendingFailedCards || [];
@@ -81993,6 +82086,14 @@ ${block}`) || "\u6613\u6DF7\u8BCD\u5E93",
       if (existing.mnemonic && card.mnemonic && existing.mnemonic === card.mnemonic) return true;
       if (existing.sourceText && card.sourceText && existing.sourceText === card.sourceText) return true;
       return keywordSimilarity(existing.keywords, card.keywords) >= 0.72;
+    });
+  }
+  function findDuplicateChatGPTRecitationCard(card) {
+    return getRecitationCards().find((existing) => {
+      if (card.cardId && existing.cardId === card.cardId) return true;
+      if (card.id && (existing.id === card.id || existing.cardId === card.id)) return true;
+      if (card.sourceQuestionId && existing.sourceQuestionId === card.sourceQuestionId) return true;
+      return false;
     });
   }
   function addFailedRecitationCardsToAbnormal(failedCards, sourceFile) {

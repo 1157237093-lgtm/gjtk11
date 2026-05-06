@@ -223,6 +223,7 @@ const elements = {
   paperFileInput: document.getElementById("paper-file-input"),
   answerFileInput: document.getElementById("answer-file-input"),
   recitationFileInput: document.getElementById("recitation-file-input"),
+  chatgptRecitationJsonInput: document.getElementById("chatgpt-recitation-json-input"),
   recitationSummary: document.getElementById("recitation-summary"),
   recitationList: document.getElementById("recitation-list"),
   emptyRecitation: document.getElementById("empty-recitation"),
@@ -284,6 +285,14 @@ function bindEvents() {
 
   elements.recitationFileInput.addEventListener("change", async (event) => {
     event.target.value = "";
+  });
+
+  elements.chatgptRecitationJsonInput?.addEventListener("change", async (event) => {
+    await handleChatGPTRecitationJsonInputChange(event);
+  });
+
+  elements.chatgptRecitationJsonInput?.addEventListener("cancel", () => {
+    flashMessage("已取消选择 ChatGPT 背诵卡 JSON。");
   });
 
   elements.abnormalFileInput?.addEventListener("change", async (event) => {
@@ -584,21 +593,13 @@ function bindEvents() {
   });
 
   elements.importChatGPTRecitationJsonButton?.addEventListener("click", async () => {
-    try {
-      const file = await pickChatGPTRecitationJsonFile();
-      if (!file) {
-        return;
-      }
-      const result = await importChatGPTRecitationJsonFile(file);
-      flashMessage(
-        `已导入 ChatGPT 背诵卡：新增 ${result.importedCount} 张，更新 ${result.updatedCount} 张，失败 ${result.failedCount} 张。`,
-        result.importedCount + result.updatedCount === 0 && result.failedCount > 0
-      );
-      persistStore();
-      renderApp();
-    } catch (error) {
-      flashMessage(`导入 ChatGPT 背诵卡 JSON 失败：${error.message}`, true);
+    const input = elements.chatgptRecitationJsonInput;
+    if (!input) {
+      flashMessage("未找到 ChatGPT 背诵卡 JSON 文件选择器。", true);
+      return;
     }
+    input.value = "";
+    input.click();
   });
 
   document.getElementById("parse-recitation-text").addEventListener("click", () => {
@@ -932,11 +933,32 @@ async function importRecitationCardsFile(file) {
 }
 
 async function importChatGPTRecitationJsonFile(file) {
-  if (!/\.json$/i.test(file.name || "") && file.type && file.type !== "application/json") {
-    throw new Error("请选择 ChatGPT 背诵卡 JSON 文件。");
+  if (!/\.json$/i.test(file.name || "")) {
+    throw new Error("请选择 .json 文件。");
   }
   const text = await file.text();
   return importChatGPTRecitationCardsDirect(text, file.name || "ChatGPT 背诵卡 JSON");
+}
+
+async function handleChatGPTRecitationJsonInputChange(event) {
+  const input = event.target;
+  const file = input.files?.[0] || null;
+  input.value = "";
+  if (!file) {
+    flashMessage("已取消选择 ChatGPT 背诵卡 JSON。");
+    return;
+  }
+  try {
+    const result = await importChatGPTRecitationJsonFile(file);
+    flashMessage(
+      `已导入 ChatGPT 背诵卡：新增 ${result.importedCount} 张，更新 ${result.updatedCount} 张，失败 ${result.failedCount} 张。`,
+      result.importedCount + result.updatedCount === 0 && result.failedCount > 0
+    );
+    persistStore();
+    renderApp();
+  } catch (error) {
+    flashMessage(error.message || "导入 ChatGPT 背诵卡 JSON 失败。", true);
+  }
 }
 
 async function readImportPayload(file, kind) {
@@ -1149,27 +1171,6 @@ async function pickRecitationFile() {
             accept: {
               "text/plain": [".txt"],
               "text/markdown": [".md"],
-              "application/json": [".json"],
-            },
-          },
-        ],
-      });
-      return fileHandle ? fileHandle.getFile() : null;
-    }
-
-    return pickImportFileWithInput(elements.recitationFileInput);
-  });
-}
-
-async function pickChatGPTRecitationJsonFile() {
-  return withFilePickerLock(async () => {
-    if (isFilePickerSupported()) {
-      const [fileHandle] = await window.showOpenFilePicker({
-        multiple: false,
-        types: [
-          {
-            description: "ChatGPT 背诵卡 JSON",
-            accept: {
               "application/json": [".json"],
             },
           },
@@ -3811,7 +3812,10 @@ function prepareRecitationImport(text, sourceFile) {
 
 function importChatGPTRecitationCardsDirect(text, sourceFile = "ChatGPT 背诵卡 JSON") {
   const parsed = typeof text === "string" ? JSON.parse(text) : text;
-  const rows = Array.isArray(parsed?.cards) ? parsed.cards : [];
+  if (!Array.isArray(parsed?.cards)) {
+    throw new Error("JSON 中没有找到 cards 数组。");
+  }
+  const rows = parsed.cards;
   if (!rows.length) {
     throw new Error("JSON 中没有找到 cards 数组。");
   }
