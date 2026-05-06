@@ -31,7 +31,9 @@
 
 ## 本地配置
 
-脚本读取 `config/local-paths.json`。第一次运行前可以参考 `config/local-paths.example.json` 修改成本机路径。
+脚本读取 `config/local-paths.json`。第一次运行前，需要复制 `config/local-paths.example.json` 为 `config/local-paths.json`，再把里面的路径改成本机真实路径。
+
+`config/local-paths.json` 是本机私有配置，已加入 `.gitignore`，不应该提交到 GitHub。
 
 字段说明：
 
