@@ -1,0 +1,13 @@
+{
+  "rootDir": "/path/to/your/source/root",
+  "paperDir": "/path/to/your/source/root/Downloads",
+  "answerDir": "/path/to/your/source/root/答案解",
+  "historicalTruthFile": "/path/to/your/source/root/历年真题.pdf",
+  "outputBundle": "/path/to/your/project/autoload-data.js",
+  "outputReport": "/path/to/your/project/data/autoload-report.json",
+  "verifyFiles": {
+    "q11": "/path/to/sample/题本.pdf",
+    "q10": "/path/to/another-sample/题本.pdf",
+    "a6": "/path/to/sample/答案解析.pdf"
+  }
+}
