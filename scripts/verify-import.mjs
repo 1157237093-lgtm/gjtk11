@@ -35,12 +35,12 @@ function readLocalPaths() {
 function validateVerifyFiles(config) {
   const files = config.verifyFiles;
   if (!files || typeof files !== "object" || Array.isArray(files)) {
-    fail("缺少 verifyFiles 配置。", ["需要至少配置一个题本 PDF 和一个答案解析 PDF。");
+    fail("缺少 verifyFiles 配置。", ["需要至少配置一个题本 PDF 和一个答案解析 PDF。"]);
   }
 
   const entries = Object.entries(files).filter(([, filePath]) => String(filePath || "").trim());
   if (!entries.length) {
-    fail("verifyFiles 为空。", ["请在 config/local-paths.json 中填入用于验证导入的 PDF 文件路径。");
+    fail("verifyFiles 为空。", ["请在 config/local-paths.json 中填入用于验证导入的 PDF 文件路径。"]);
   }
 
   const missing = entries.filter(([, filePath]) => !fs.existsSync(filePath));
