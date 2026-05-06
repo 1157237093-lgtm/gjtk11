@@ -1,102 +1,67 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { parsePaperPdfText, parseAnswerPdfText, parseHistoricalTruthPdfText } from "../src/parser-core.js";
 
-const ROOT_DIR = "/Users/a66/Library/Mobile Documents/com~apple~CloudDocs";
-const PAPER_DIR = path.join(ROOT_DIR, "Downloads");
-const ANSWER_DIR = path.join(ROOT_DIR, "答案解");
-const HISTORICAL_TRUTH_FILE = path.join(ROOT_DIR, "历年真题.pdf");
-const OUT_JS = path.resolve("/Users/a66/Documents/Codex/2026-04-20-1-2-3-4-5-6/autoload-data.js");
-const OUT_REPORT = path.resolve("/Users/a66/Documents/Codex/2026-04-20-1-2-3-4-5-6/data/autoload-report.json");
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_DIR = path.resolve(SCRIPT_DIR, "..");
+const CONFIG_PATH = path.join(PROJECT_DIR, "config/local-paths.json");
+const EXAMPLE_CONFIG_PATH = path.join(PROJECT_DIR, "config/local-paths.example.json");
 const MANUAL_HISTORICAL_ANSWER_VERSION = "historical-2025-answers-20260429-v1";
-const HISTORICAL_2025_ANSWERS = [
-  "D",
-  "B",
-  "A",
-  "D",
-  "A",
-  "B",
-  "A",
-  "D",
-  "C",
-  "B",
-  "C",
-  "C",
-  "A",
-  "C",
-  "B",
-  "D",
-  "C",
-  "D",
-  "A",
-  "B",
-  "C",
-  "D",
-  "A",
-  "D",
-  "A",
-  "C",
-  "D",
-  "C",
-  "C",
-  "A",
-  "B",
-  "C",
-  "A",
-  "B",
-  "A",
-  "D",
-  "C",
-  "B",
-  "A",
-  "D",
-  "B",
-  "D",
-  "A",
-  "C",
-  "A",
-  "A",
-  "B",
-  "C",
-  "A",
-  "D",
-  "B",
-  "D",
-  "B",
-  "B",
-  "C",
-  "A",
-  "D",
-  "D",
-  "B",
-  "A",
-  "D",
-  "A",
-  "D",
-  "B",
-  "C",
-  "D",
-  "A",
-  "C",
-  "C",
-  "A",
-  "ABC",
-  "ABD",
-  "ACD",
-  "ABC",
-  "ABD",
-  "BD",
-  "AC",
-  "ABD",
-  "ABC",
-  "ABC",
-  "ABCD",
-  "ABCD",
-  "BC",
-  "ABD",
-  "AB",
-];
+const HISTORICAL_2025_ANSWERS = "D B A D A B A D C B C C A C B D C D A B C D A D A C D C C A B C A B A D C B A D B D A C A A B C A D B D B B C A D D B A D A D B C D A C C A ABC ABD ACD ABC ABD BD AC ABD ABC ABC ABCD ABCD BC ABD AB".split(" ");
+
+function fail(message, details = []) {
+  console.error(["build-fixed-import-bundle 配置错误：", message, ...details.map((item) => `- ${item}`)].join("\n"));
+  process.exit(1);
+}
+
+function readLocalPaths() {
+  if (!fs.existsSync(CONFIG_PATH)) {
+    fail(`缺少 ${path.relative(PROJECT_DIR, CONFIG_PATH)}`, [
+      `请复制 ${path.relative(PROJECT_DIR, EXAMPLE_CONFIG_PATH)} 为 config/local-paths.json`,
+      "然后把题本目录、答案目录、历年真题文件和输出路径改成本机真实路径。",
+    ]);
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+  } catch (error) {
+    fail(`无法解析 ${path.relative(PROJECT_DIR, CONFIG_PATH)}。`, [
+      error instanceof Error ? error.message : String(error),
+      "请确认 JSON 没有注释、尾逗号或未转义的反斜杠。",
+    ]);
+  }
+}
+
+function requiredPath(config, key) {
+  const value = String(config[key] || "").trim();
+  if (!value) {
+    fail(`缺少 ${key} 配置。`, [`请在 ${path.relative(PROJECT_DIR, CONFIG_PATH)} 中补充 ${key}。`]);
+  }
+  return path.resolve(value);
+}
+
+function loadLocalPaths() {
+  const config = readLocalPaths();
+  const localPaths = {
+    paperDir: requiredPath(config, "paperDir"),
+    answerDir: requiredPath(config, "answerDir"),
+    historicalTruthFile: requiredPath(config, "historicalTruthFile"),
+    outJs: requiredPath(config, "outputBundle"),
+    outReport: requiredPath(config, "outputReport"),
+  };
+  const missingDirs = [["paperDir", localPaths.paperDir], ["answerDir", localPaths.answerDir]].filter(([, dirPath]) => !fs.existsSync(dirPath));
+  if (missingDirs.length) {
+    fail("输入目录不存在。", missingDirs.map(([key, dirPath]) => `${key}: ${dirPath}`));
+  }
+  if (fs.existsSync(localPaths.historicalTruthFile) && !fs.statSync(localPaths.historicalTruthFile).isFile()) {
+    fail("historicalTruthFile 不是文件。", [`historicalTruthFile: ${localPaths.historicalTruthFile}`]);
+  }
+  return localPaths;
+}
+
+const { paperDir: PAPER_DIR, answerDir: ANSWER_DIR, historicalTruthFile: HISTORICAL_TRUTH_FILE, outJs: OUT_JS, outReport: OUT_REPORT } = loadLocalPaths();
 
 function naturalSort(a, b) {
   return a.localeCompare(b, "zh-CN", { numeric: true, sensitivity: "base" });
@@ -130,18 +95,13 @@ async function extractPdfText(filePath) {
 }
 
 function collectFiles(dirPath, matcher) {
-  if (!fs.existsSync(dirPath)) {
-    return [];
-  }
-
-  return fs
-    .readdirSync(dirPath)
-    .filter((name) => matcher(name))
-    .sort(naturalSort)
-    .map((name) => path.join(dirPath, name));
+  return fs.readdirSync(dirPath).filter((name) => matcher(name)).sort(naturalSort).map((name) => path.join(dirPath, name));
 }
 
 function buildVersion(filePaths) {
+  if (!filePaths.length) {
+    return "fixed-empty";
+  }
   const fingerprint = filePaths
     .map((filePath) => {
       const stat = fs.statSync(filePath);
@@ -158,16 +118,15 @@ async function parseFiles(filePaths, kind) {
   for (const filePath of filePaths) {
     try {
       const text = await extractPdfText(filePath);
-      const payload =
-        kind === "paper"
-          ? parsePaperPdfText(text, path.basename(filePath))
-          : parseAnswerPdfText(text, path.basename(filePath));
+      const payload = kind === "paper" ? parsePaperPdfText(text, path.basename(filePath)) : parseAnswerPdfText(text, path.basename(filePath));
       items.push(payload);
     } catch (error) {
       errors.push({
         file: path.basename(filePath),
+        path: filePath,
         kind,
         error: error instanceof Error ? error.message : String(error),
+        hint: "请检查 PDF 是否可复制文本、文件名是否包含期次信息，以及解析规则是否覆盖该版式。",
       });
     }
   }
@@ -177,7 +136,18 @@ async function parseFiles(filePaths, kind) {
 
 async function parseHistoricalTruthFile(filePath) {
   if (!fs.existsSync(filePath)) {
-    return { items: [], errors: [] };
+    return {
+      items: [],
+      errors: [
+        {
+          file: path.basename(filePath),
+          path: filePath,
+          kind: "historical-truth",
+          error: "文件不存在，已跳过历年真题导入。",
+          hint: "如果暂时不导入历年真题，可以先放一个正确路径的 PDF，或后续把该输入改成可选配置。",
+        },
+      ],
+    };
   }
 
   try {
@@ -190,8 +160,10 @@ async function parseHistoricalTruthFile(filePath) {
       errors: [
         {
           file: path.basename(filePath),
+          path: filePath,
           kind: "historical-truth",
           error: error instanceof Error ? error.message : String(error),
+          hint: "请检查历年真题 PDF 是否可复制文本，或调整 parseHistoricalTruthPdfText 的版式规则。",
         },
       ],
     };
@@ -223,6 +195,14 @@ function buildHistorical2025AnswerPayload(papers) {
 const paperFiles = collectFiles(PAPER_DIR, isPaperFile);
 const answerFiles = collectFiles(ANSWER_DIR, isAnswerFile);
 const historicalTruthFiles = fs.existsSync(HISTORICAL_TRUTH_FILE) ? [HISTORICAL_TRUTH_FILE] : [];
+
+if (!paperFiles.length) {
+  console.warn(`未在题本目录找到匹配 PDF：${PAPER_DIR}`);
+}
+if (!answerFiles.length) {
+  console.warn(`未在答案目录找到匹配 PDF：${ANSWER_DIR}`);
+}
+
 const [paperResult, answerResult, historicalResult] = await Promise.all([
   parseFiles(paperFiles, "paper"),
   parseFiles(answerFiles, "answer"),
@@ -252,6 +232,7 @@ const bundle = {
   answers: [...answerResult.items, ...historicalAnswerPayloads],
 };
 
+fs.mkdirSync(path.dirname(OUT_JS), { recursive: true });
 fs.mkdirSync(path.dirname(OUT_REPORT), { recursive: true });
 fs.writeFileSync(OUT_JS, `window.__AUTO_IMPORT_BUNDLE__ = ${JSON.stringify(bundle, null, 2)};\n`);
 fs.writeFileSync(OUT_REPORT, `${JSON.stringify(bundle.report, null, 2)}\n`);
@@ -260,6 +241,7 @@ console.log(
   JSON.stringify(
     {
       out: OUT_JS,
+      report: OUT_REPORT,
       version: bundle.version,
       paperFiles: paperFiles.length,
       historicalTruthFiles: historicalTruthFiles.length,
@@ -268,6 +250,12 @@ console.log(
       historicalTruthPapers: bundle.report.historicalTruthPaperCount,
       importedAnswers: bundle.report.importedAnswerCount,
       errors: bundle.report.errors.length,
+      errorHints: bundle.report.errors.map((item) => ({
+        kind: item.kind,
+        file: item.file,
+        error: item.error,
+        hint: item.hint,
+      })),
     },
     null,
     2
