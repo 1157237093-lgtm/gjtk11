@@ -78680,6 +78680,7 @@ ${text.slice(0, 2e3)}`;
     "\u6613\u6DF7\u8BCD\u5E93",
     "\u9AD8\u9891\u8003\u70B9\u5E93",
     "\u9519\u9898\u56DE\u6D41\u5E93",
+    "\u9AD8\u5371\u56DE\u6D41\u5E93",
     "\u8003\u524D\u901F\u8BB0\u5E93"
   ];
   var RECITATION_SOURCES = ["\u624B\u52A8\u5BFC\u5165", "ChatGPT JSON", "\u9519\u9898\u751F\u6210", "\u9519\u9898\u56DE\u6D41", "\u9519\u9898\u81EA\u52A8\u751F\u6210", "\u8003\u524D\u901F\u8BB0"];
@@ -79086,19 +79087,20 @@ ${text.slice(0, 2e3)}`;
         }
       }
       let gradedCount = 0;
-      let autoCardCount = 0;
+      const autoCardResults = [];
       answeredQuestions.forEach((question) => {
         gradeQuestion(question);
         const cardResult = maybeAutoGenerateRecitationCardAfterGrade(question, { trigger: "batch-submit" });
         if (cardResult) {
-          autoCardCount += cardResult.created ? 1 : 0;
+          autoCardResults.push({ question, result: cardResult });
         }
         gradedCount += 1;
       });
       persistStore();
       const stats = getPaperStats(state.currentPaperId);
+      const autoCardNotice = buildBatchAutoRecitationNotice(answeredQuestions, autoCardResults);
       flashMessage(
-        state.paperMode === "exam" ? `\u8003\u8BD5\u6A21\u5F0F\u5DF2\u4EA4\u5377\uFF0C\u672C\u6B21\u5224\u5B9A ${gradedCount} \u9898\u3002\u672C\u671F\u5F97\u5206 ${stats.scoreText}\u3002${autoCardCount ? ` \u5DF2\u81EA\u52A8\u751F\u6210\u80CC\u8BF5\u5361 ${autoCardCount} \u5F20\u3002` : ""}` : `\u7EC3\u4E60\u6A21\u5F0F\u5DF2\u5BF9\u7B54\u6848\uFF0C\u672C\u6B21\u5224\u5B9A ${gradedCount} \u9898\u3002\u672C\u671F\u5F97\u5206 ${stats.scoreText}\u3002${autoCardCount ? ` \u5DF2\u81EA\u52A8\u751F\u6210\u80CC\u8BF5\u5361 ${autoCardCount} \u5F20\u3002` : ""}`
+        state.paperMode === "exam" ? `\u8003\u8BD5\u6A21\u5F0F\u5DF2\u4EA4\u5377\uFF0C\u672C\u6B21\u5224\u5B9A ${gradedCount} \u9898\u3002\u672C\u671F\u5F97\u5206 ${stats.scoreText}\u3002${autoCardNotice}` : `\u7EC3\u4E60\u6A21\u5F0F\u5DF2\u5BF9\u7B54\u6848\uFF0C\u672C\u6B21\u5224\u5B9A ${gradedCount} \u9898\u3002\u672C\u671F\u5F97\u5206 ${stats.scoreText}\u3002${autoCardNotice}`
       );
       renderApp();
     });
@@ -80576,24 +80578,27 @@ ${text.slice(0, 2e3)}`;
         updateRecitationCardAfterQuestionGrade(question);
         const autoCardResult = maybeAutoGenerateRecitationCardAfterGrade(question, { trigger: "submit" });
         persistStore();
-        const cardSuffix = autoCardResult ? ` \u5DF2${autoCardResult.created ? "\u751F\u6210" : "\u66F4\u65B0"}\u80CC\u8BF5\u5361\uFF1A${autoCardResult.card.title}` : "";
+        const cardNotice = getAutoRecitationNotice(question, autoCardResult);
+        const cardSuffix = cardNotice ? ` ${cardNotice}` : "";
         if (isWrongBook) {
           flashMessage(
-            question.status === "correct" ? "\u56DE\u7B54\u6B63\u786E\uFF0C\u5DF2\u4ECE\u9519\u9898\u672C\u79FB\u51FA\u3002" : `\u56DE\u7B54\u9519\u8BEF\uFF0C\u7EE7\u7EED\u4FDD\u7559\u5728\u9519\u9898\u672C\u3002${cardSuffix}`,
+            question.status === "correct" ? `\u56DE\u7B54\u6B63\u786E\uFF0C\u5DF2\u4ECE\u9519\u9898\u672C\u79FB\u51FA\u3002${cardSuffix}` : `\u56DE\u7B54\u9519\u8BEF\uFF0C\u7EE7\u7EED\u4FDD\u7559\u5728\u9519\u9898\u672C\u3002${cardSuffix}`,
             question.status !== "correct"
           );
         } else if (isGuessBook) {
           flashMessage(
-            question.status === "correct" ? "\u56DE\u7B54\u6B63\u786E\uFF0C\u7EE7\u7EED\u4FDD\u7559\u5728\u731C\u5BF9\u9898\u5E93\u3002" : `\u56DE\u7B54\u9519\u8BEF\uFF0C\u5DF2\u8F6C\u5165\u9519\u9898\u3002${cardSuffix}`,
+            question.status === "correct" ? `\u56DE\u7B54\u6B63\u786E\uFF0C\u7EE7\u7EED\u4FDD\u7559\u5728\u731C\u5BF9\u9898\u5E93\u3002${cardSuffix}` : `\u56DE\u7B54\u9519\u8BEF\uFF0C\u5DF2\u8F6C\u5165\u9519\u9898\u3002${cardSuffix}`,
             question.status !== "correct"
           );
         } else if (isRiskBook) {
           flashMessage(
-            question.isHighRisk ? `\u5DF2\u63D0\u4EA4\uFF0C\u9AD8\u5371\u72B6\u6001\u7EE7\u7EED\u4FDD\u7559\u3002${cardSuffix}` : question.status === "correct" ? "\u5DF2\u8FDE\u7EED\u786E\u5B9A\u505A\u5BF9\uFF0C\u8F6C\u5165\u5DF2\u638C\u63E1\u3002" : `\u56DE\u7B54\u9519\u8BEF\uFF0C\u5DF2\u8F6C\u5165\u9519\u9898\u3002${cardSuffix}`,
+            question.isHighRisk ? `\u5DF2\u63D0\u4EA4\uFF0C\u9AD8\u5371\u72B6\u6001\u7EE7\u7EED\u4FDD\u7559\u3002${cardSuffix}` : question.status === "correct" ? `\u5DF2\u8FDE\u7EED\u786E\u5B9A\u505A\u5BF9\uFF0C\u8F6C\u5165\u5DF2\u638C\u63E1\u3002${cardSuffix}` : `\u56DE\u7B54\u9519\u8BEF\uFF0C\u5DF2\u8F6C\u5165\u9519\u9898\u3002${cardSuffix}`,
             question.status !== "correct" || question.isHighRisk
           );
         } else if (autoCardResult) {
-          flashMessage(`\u56DE\u7B54\u9519\u8BEF\uFF0C\u5DF2${autoCardResult.created ? "\u751F\u6210" : "\u66F4\u65B0"}\u80CC\u8BF5\u5361\uFF1A${autoCardResult.card.title}`, true);
+          flashMessage(`${question.status === "wrong" ? "\u56DE\u7B54\u9519\u8BEF" : "\u56DE\u7B54\u6B63\u786E"}\uFF0C${cardNotice}`, question.status !== "correct");
+        } else if (cardNotice) {
+          flashMessage(`\u56DE\u7B54\u6B63\u786E\uFF0C${cardNotice}`);
         }
         renderApp();
       });
@@ -80703,7 +80708,7 @@ ${text.slice(0, 2e3)}`;
         }
         updateRiskReasonsFromDom(question, container);
         persistReviewMetadata(question);
-        if (shouldGenerateCardForHighRiskMeta(question)) {
+        if (shouldGenerateCardForHighRiskCorrect(question)) {
           generateOrUpdateRecitationCardFromQuestion(question, { trigger: "risk-label" });
         }
         persistStore();
@@ -81314,21 +81319,44 @@ ${text.slice(0, 2e3)}`;
     if (!question || isQuestionAbnormal(question)) {
       return null;
     }
-    if (question.status === "wrong" || shouldGenerateCardForHighRiskMeta(question)) {
+    if (question.status === "wrong" || shouldGenerateCardForHighRiskCorrect(question)) {
       return generateOrUpdateRecitationCardFromQuestion(question, {
         trigger: options.trigger || "auto-wrong"
       });
     }
     return null;
   }
-  function shouldGenerateCardForHighRiskMeta(question) {
-    const text = [
-      question.confidenceStatus,
-      question.guessReason,
-      getQuestionRiskReasons(question).join(" "),
-      normalizeAnswerToArray(question.hesitationOptions).join("")
-    ].join(" ");
-    return /蒙|不确定|纠结|选项边界不清|题干没读懂|固定原话缺失|做对但无法解释/.test(text) || question.status === "correct" && question.isHighRisk;
+  function shouldGenerateCardForHighRiskCorrect(question) {
+    return question.status === "correct" && RISK_CONFIDENCE_VALUES.includes(question.confidenceStatus);
+  }
+  function getAutoRecitationCategoryForQuestion(question) {
+    return shouldGenerateCardForHighRiskCorrect(question) ? "\u9AD8\u5371\u56DE\u6D41\u5E93" : "\u9519\u9898\u56DE\u6D41\u5E93";
+  }
+  function getAutoRecitationNotice(question, autoCardResult) {
+    if (question.status === "correct" && question.confidenceStatus === "\u786E\u5B9A") {
+      return "\u65E0\u9700\u751F\u6210\u80CC\u8BF5\u5361";
+    }
+    if (!autoCardResult) {
+      return "";
+    }
+    const title = autoCardResult.card?.title ? `\uFF1A${autoCardResult.card.title}` : "";
+    if (question.status === "wrong") {
+      return `\u5DF2\u751F\u6210\u9519\u9898\u56DE\u6D41\u5361${title}`;
+    }
+    if (shouldGenerateCardForHighRiskCorrect(question)) {
+      return `\u5DF2\u751F\u6210\u9AD8\u5371\u56DE\u6D41\u5361${title}`;
+    }
+    return "";
+  }
+  function buildBatchAutoRecitationNotice(questions, autoCardResults) {
+    const wrongCount = autoCardResults.filter(({ question }) => question.status === "wrong").length;
+    const highRiskCount = autoCardResults.filter(({ question }) => shouldGenerateCardForHighRiskCorrect(question)).length;
+    const noNeedCount = questions.filter((question) => question.status === "correct" && question.confidenceStatus === "\u786E\u5B9A").length;
+    const parts = [];
+    if (wrongCount) parts.push(`\u5DF2\u751F\u6210\u9519\u9898\u56DE\u6D41\u5361 ${wrongCount} \u5F20`);
+    if (highRiskCount) parts.push(`\u5DF2\u751F\u6210\u9AD8\u5371\u56DE\u6D41\u5361 ${highRiskCount} \u5F20`);
+    if (noNeedCount) parts.push(`\u65E0\u9700\u751F\u6210\u80CC\u8BF5\u5361 ${noNeedCount} \u9898`);
+    return parts.length ? ` ${parts.join("\uFF1B")}\u3002` : "";
   }
   function generateOrUpdateRecitationCardFromQuestion(question, options = {}) {
     const existing = findDuplicateRecitationCardForQuestion(question);
@@ -81408,7 +81436,7 @@ ${text.slice(0, 2e3)}`;
       back: existing?.back || frontBack.back,
       recitePoint: existing?.recitePoint || inferRecitationTitle(question),
       triggerWords: triggerWords.join("\u3001"),
-      category: "\u9519\u9898\u56DE\u6D41\u5E93",
+      category: getAutoRecitationCategoryForQuestion(question),
       title: existing?.title || inferRecitationTitle(question),
       keywords: existing?.keywords?.length ? existing.keywords : triggerWords,
       keyword: existing?.keyword || triggerWords[0] || inferRecitationTitle(question),
@@ -82433,7 +82461,7 @@ ${card.typicalMaterial}
     return isRecitationCategoryHeading(text) ? inferRecitationCategory(text) : "";
   }
   function isRecitationCategoryHeading(text) {
-    return /问法|治理|生态|绿色|消费|科技|创新|乡村|民生|公共服务|政策|经济|法律|公文|哲学|固定搭配|口诀|速背|题眼|易混|高频/.test(text);
+    return /问法|治理|生态|绿色|消费|科技|创新|乡村|民生|公共服务|政策|经济|法律|公文|哲学|固定搭配|口诀|速背|题眼|易混|高频|错题|高危/.test(text);
   }
   function inferRecitationCategory(text) {
     const value = String(text || "");
@@ -82453,6 +82481,7 @@ ${card.typicalMaterial}
     if (/题眼/.test(value)) return "\u9898\u773C\u8BCD\u5E93";
     if (/易混|对照|区别|vs|VS/.test(value)) return "\u6613\u6DF7\u8BCD\u5E93";
     if (/错题/.test(value)) return "\u9519\u9898\u56DE\u6D41\u5E93";
+    if (/高危/.test(value)) return "\u9AD8\u5371\u56DE\u6D41\u5E93";
     return "\u9AD8\u9891\u8003\u70B9\u5E93";
   }
   function extractKeywordsFromText(text) {

@@ -38,6 +38,7 @@ const RECITATION_CATEGORIES = [
   "易混词库",
   "高频考点库",
   "错题回流库",
+  "高危回流库",
   "考前速记库",
 ];
 const RECITATION_SOURCES = ["手动导入", "ChatGPT JSON", "错题生成", "错题回流", "错题自动生成", "考前速记"];
@@ -479,22 +480,23 @@ function bindEvents() {
     }
 
     let gradedCount = 0;
-    let autoCardCount = 0;
+    const autoCardResults = [];
     answeredQuestions.forEach((question) => {
       gradeQuestion(question);
       const cardResult = maybeAutoGenerateRecitationCardAfterGrade(question, { trigger: "batch-submit" });
       if (cardResult) {
-        autoCardCount += cardResult.created ? 1 : 0;
+        autoCardResults.push({ question, result: cardResult });
       }
       gradedCount += 1;
     });
 
     persistStore();
     const stats = getPaperStats(state.currentPaperId);
+    const autoCardNotice = buildBatchAutoRecitationNotice(answeredQuestions, autoCardResults);
     flashMessage(
       state.paperMode === "exam"
-        ? `考试模式已交卷，本次判定 ${gradedCount} 题。本期得分 ${stats.scoreText}。${autoCardCount ? ` 已自动生成背诵卡 ${autoCardCount} 张。` : ""}`
-        : `练习模式已对答案，本次判定 ${gradedCount} 题。本期得分 ${stats.scoreText}。${autoCardCount ? ` 已自动生成背诵卡 ${autoCardCount} 张。` : ""}`
+        ? `考试模式已交卷，本次判定 ${gradedCount} 题。本期得分 ${stats.scoreText}。${autoCardNotice}`
+        : `练习模式已对答案，本次判定 ${gradedCount} 题。本期得分 ${stats.scoreText}。${autoCardNotice}`
     );
     renderApp();
   });
@@ -2217,15 +2219,16 @@ function bindQuestionEvents(container, questions, mode, isWrongBook = false, isG
       updateRecitationCardAfterQuestionGrade(question);
       const autoCardResult = maybeAutoGenerateRecitationCardAfterGrade(question, { trigger: "submit" });
       persistStore();
-      const cardSuffix = autoCardResult ? ` 已${autoCardResult.created ? "生成" : "更新"}背诵卡：${autoCardResult.card.title}` : "";
+      const cardNotice = getAutoRecitationNotice(question, autoCardResult);
+      const cardSuffix = cardNotice ? ` ${cardNotice}` : "";
       if (isWrongBook) {
         flashMessage(
-          question.status === "correct" ? "回答正确，已从错题本移出。" : `回答错误，继续保留在错题本。${cardSuffix}`,
+          question.status === "correct" ? `回答正确，已从错题本移出。${cardSuffix}` : `回答错误，继续保留在错题本。${cardSuffix}`,
           question.status !== "correct"
         );
       } else if (isGuessBook) {
         flashMessage(
-          question.status === "correct" ? "回答正确，继续保留在猜对题库。" : `回答错误，已转入错题。${cardSuffix}`,
+          question.status === "correct" ? `回答正确，继续保留在猜对题库。${cardSuffix}` : `回答错误，已转入错题。${cardSuffix}`,
           question.status !== "correct"
         );
       } else if (isRiskBook) {
@@ -2233,12 +2236,14 @@ function bindQuestionEvents(container, questions, mode, isWrongBook = false, isG
           question.isHighRisk
             ? `已提交，高危状态继续保留。${cardSuffix}`
             : question.status === "correct"
-              ? "已连续确定做对，转入已掌握。"
+              ? `已连续确定做对，转入已掌握。${cardSuffix}`
               : `回答错误，已转入错题。${cardSuffix}`,
           question.status !== "correct" || question.isHighRisk
         );
       } else if (autoCardResult) {
-        flashMessage(`回答错误，已${autoCardResult.created ? "生成" : "更新"}背诵卡：${autoCardResult.card.title}`, true);
+        flashMessage(`${question.status === "wrong" ? "回答错误" : "回答正确"}，${cardNotice}`, question.status !== "correct");
+      } else if (cardNotice) {
+        flashMessage(`回答正确，${cardNotice}`);
       }
       renderApp();
     });
@@ -2360,7 +2365,7 @@ function bindQuestionEvents(container, questions, mode, isWrongBook = false, isG
 
       updateRiskReasonsFromDom(question, container);
       persistReviewMetadata(question);
-      if (shouldGenerateCardForHighRiskMeta(question)) {
+      if (shouldGenerateCardForHighRiskCorrect(question)) {
         generateOrUpdateRecitationCardFromQuestion(question, { trigger: "risk-label" });
       }
       persistStore();
@@ -3069,7 +3074,7 @@ function maybeAutoGenerateRecitationCardAfterGrade(question, options = {}) {
   if (!question || isQuestionAbnormal(question)) {
     return null;
   }
-  if (question.status === "wrong" || shouldGenerateCardForHighRiskMeta(question)) {
+  if (question.status === "wrong" || shouldGenerateCardForHighRiskCorrect(question)) {
     return generateOrUpdateRecitationCardFromQuestion(question, {
       trigger: options.trigger || "auto-wrong",
     });
@@ -3077,17 +3082,40 @@ function maybeAutoGenerateRecitationCardAfterGrade(question, options = {}) {
   return null;
 }
 
-function shouldGenerateCardForHighRiskMeta(question) {
-  const text = [
-    question.confidenceStatus,
-    question.guessReason,
-    getQuestionRiskReasons(question).join(" "),
-    normalizeAnswerToArray(question.hesitationOptions).join(""),
-  ].join(" ");
-  return (
-    /蒙|不确定|纠结|选项边界不清|题干没读懂|固定原话缺失|做对但无法解释/.test(text) ||
-    (question.status === "correct" && question.isHighRisk)
-  );
+function shouldGenerateCardForHighRiskCorrect(question) {
+  return question.status === "correct" && RISK_CONFIDENCE_VALUES.includes(question.confidenceStatus);
+}
+
+function getAutoRecitationCategoryForQuestion(question) {
+  return shouldGenerateCardForHighRiskCorrect(question) ? "高危回流库" : "错题回流库";
+}
+
+function getAutoRecitationNotice(question, autoCardResult) {
+  if (question.status === "correct" && question.confidenceStatus === "确定") {
+    return "无需生成背诵卡";
+  }
+  if (!autoCardResult) {
+    return "";
+  }
+  const title = autoCardResult.card?.title ? `：${autoCardResult.card.title}` : "";
+  if (question.status === "wrong") {
+    return `已生成错题回流卡${title}`;
+  }
+  if (shouldGenerateCardForHighRiskCorrect(question)) {
+    return `已生成高危回流卡${title}`;
+  }
+  return "";
+}
+
+function buildBatchAutoRecitationNotice(questions, autoCardResults) {
+  const wrongCount = autoCardResults.filter(({ question }) => question.status === "wrong").length;
+  const highRiskCount = autoCardResults.filter(({ question }) => shouldGenerateCardForHighRiskCorrect(question)).length;
+  const noNeedCount = questions.filter((question) => question.status === "correct" && question.confidenceStatus === "确定").length;
+  const parts = [];
+  if (wrongCount) parts.push(`已生成错题回流卡 ${wrongCount} 张`);
+  if (highRiskCount) parts.push(`已生成高危回流卡 ${highRiskCount} 张`);
+  if (noNeedCount) parts.push(`无需生成背诵卡 ${noNeedCount} 题`);
+  return parts.length ? ` ${parts.join("；")}。` : "";
 }
 
 function generateOrUpdateRecitationCardFromQuestion(question, options = {}) {
@@ -3175,7 +3203,7 @@ function buildRecitationCardFromQuestion(question, existing = null, options = {}
     back: existing?.back || frontBack.back,
     recitePoint: existing?.recitePoint || inferRecitationTitle(question),
     triggerWords: triggerWords.join("、"),
-    category: "错题回流库",
+    category: getAutoRecitationCategoryForQuestion(question),
     title: existing?.title || inferRecitationTitle(question),
     keywords: existing?.keywords?.length ? existing.keywords : triggerWords,
     keyword: existing?.keyword || triggerWords[0] || inferRecitationTitle(question),
@@ -4288,7 +4316,7 @@ function categoryFromHeading(line) {
 }
 
 function isRecitationCategoryHeading(text) {
-  return /问法|治理|生态|绿色|消费|科技|创新|乡村|民生|公共服务|政策|经济|法律|公文|哲学|固定搭配|口诀|速背|题眼|易混|高频/.test(text);
+  return /问法|治理|生态|绿色|消费|科技|创新|乡村|民生|公共服务|政策|经济|法律|公文|哲学|固定搭配|口诀|速背|题眼|易混|高频|错题|高危/.test(text);
 }
 
 function inferRecitationCategory(text) {
@@ -4309,6 +4337,7 @@ function inferRecitationCategory(text) {
   if (/题眼/.test(value)) return "题眼词库";
   if (/易混|对照|区别|vs|VS/.test(value)) return "易混词库";
   if (/错题/.test(value)) return "错题回流库";
+  if (/高危/.test(value)) return "高危回流库";
   return "高频考点库";
 }
 
