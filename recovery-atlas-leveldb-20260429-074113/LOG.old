@@ -1,0 +1,81 @@
+2026/04/24-14:54:24.488 4bd14c Reusing MANIFEST /Users/a66/Library/Application Support/com.openai.atlas/browser-data/host/user-xtBRzvRVERDoJwEdrcrpGyxN__e1844257-49f5-48ad-90a8-98c2a3b2420f/Local Storage/leveldb/MANIFEST-000001
+2026/04/24-14:54:24.491 4bd14c Recovering log #215
+2026/04/24-14:54:24.491 4bd14c Reusing old log /Users/a66/Library/Application Support/com.openai.atlas/browser-data/host/user-xtBRzvRVERDoJwEdrcrpGyxN__e1844257-49f5-48ad-90a8-98c2a3b2420f/Local Storage/leveldb/000215.log 
+2026/04/24-15:02:08.251 4bd150 Level-0 table #219: started
+2026/04/24-15:02:08.262 4bd150 Level-0 table #219: 694957 bytes OK
+2026/04/24-15:02:08.264 4bd150 Delete type=0 #215
+2026/04/24-15:02:13.353 4bd150 Level-0 table #221: started
+2026/04/24-15:02:13.360 4bd150 Level-0 table #221: 693613 bytes OK
+2026/04/24-15:02:13.362 4bd150 Delete type=0 #218
+2026/04/24-15:02:13.363 4bd150 Compacting 4@0 + 1@1 files
+2026/04/24-15:02:13.377 4bd150 Generated table #222@0: 39 keys, 1400567 bytes
+2026/04/24-15:02:13.377 4bd150 Compacted 4@0 + 1@1 files => 1400567 bytes
+2026/04/24-15:02:13.378 4bd150 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/24-15:02:13.379 4bd150 Delete type=2 #216
+2026/04/24-15:02:13.379 4bd150 Delete type=2 #211
+2026/04/24-15:02:13.379 4bd150 Delete type=2 #213
+2026/04/24-15:02:13.379 4bd150 Delete type=2 #221
+2026/04/24-15:02:13.379 4bd150 Delete type=2 #219
+2026/04/24-15:36:57.578 4bd150 Level-0 table #224: started
+2026/04/24-15:36:57.585 4bd150 Level-0 table #224: 697759 bytes OK
+2026/04/24-15:36:57.588 4bd150 Delete type=0 #220
+2026/04/24-15:50:05.881 4bd150 Level-0 table #226: started
+2026/04/24-15:50:05.885 4bd150 Level-0 table #226: 704393 bytes OK
+2026/04/24-15:50:05.887 4bd150 Delete type=0 #223
+2026/04/24-15:50:18.158 4bd150 Level-0 table #228: started
+2026/04/24-15:50:18.160 4bd150 Level-0 table #228: 20131 bytes OK
+2026/04/24-15:50:18.168 4bd150 Delete type=0 #225
+2026/04/24-17:06:53.862 4bd150 Level-0 table #230: started
+2026/04/24-17:06:53.864 4bd150 Level-0 table #230: 16713 bytes OK
+2026/04/24-17:06:53.867 4bd150 Delete type=0 #227
+2026/04/24-17:06:53.868 4bd150 Compacting 4@0 + 1@1 files
+2026/04/24-17:06:53.884 4bd150 Generated table #231@0: 39 keys, 1429485 bytes
+2026/04/24-17:06:53.884 4bd150 Compacted 4@0 + 1@1 files => 1429485 bytes
+2026/04/24-17:06:53.884 4bd150 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/24-17:06:53.885 4bd150 Delete type=2 #228
+2026/04/24-17:06:53.885 4bd150 Delete type=2 #222
+2026/04/24-17:06:53.885 4bd150 Delete type=2 #224
+2026/04/24-17:06:53.885 4bd150 Delete type=2 #230
+2026/04/24-17:06:53.885 4bd150 Delete type=2 #226
+2026/04/24-17:14:31.684 4bd150 Level-0 table #233: started
+2026/04/24-17:14:31.688 4bd150 Level-0 table #233: 705582 bytes OK
+2026/04/24-17:14:31.690 4bd150 Delete type=0 #229
+2026/04/24-17:14:36.752 4bd150 Level-0 table #235: started
+2026/04/24-17:14:36.756 4bd150 Level-0 table #235: 704934 bytes OK
+2026/04/24-17:14:36.757 4bd150 Delete type=0 #232
+2026/04/24-17:14:54.351 4bd150 Level-0 table #237: started
+2026/04/24-17:14:54.355 4bd150 Level-0 table #237: 703686 bytes OK
+2026/04/24-17:14:54.357 4bd150 Delete type=0 #234
+2026/04/24-17:17:38.692 4bd150 Level-0 table #239: started
+2026/04/24-17:17:38.696 4bd150 Level-0 table #239: 704838 bytes OK
+2026/04/24-17:17:38.699 4bd150 Delete type=0 #236
+2026/04/24-17:17:38.699 4bd150 Compacting 4@0 + 1@1 files
+2026/04/24-17:17:38.711 4bd150 Generated table #240@0: 39 keys, 1429464 bytes
+2026/04/24-17:17:38.711 4bd150 Compacted 4@0 + 1@1 files => 1429464 bytes
+2026/04/24-17:17:38.712 4bd150 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/24-17:17:38.712 4bd150 Delete type=2 #239
+2026/04/24-17:17:38.712 4bd150 Delete type=2 #237
+2026/04/24-17:17:38.712 4bd150 Delete type=2 #235
+2026/04/24-17:17:38.712 4bd150 Delete type=2 #231
+2026/04/24-17:17:38.712 4bd150 Delete type=2 #233
+2026/04/24-17:19:07.486 4bd150 Level-0 table #242: started
+2026/04/24-17:19:07.493 4bd150 Level-0 table #242: 704943 bytes OK
+2026/04/24-17:19:07.495 4bd150 Delete type=0 #238
+2026/04/24-17:29:32.324 4bd150 Level-0 table #244: started
+2026/04/24-17:29:32.336 4bd150 Level-0 table #244: 704624 bytes OK
+2026/04/24-17:29:32.339 4bd150 Delete type=0 #241
+2026/04/25-09:55:54.208 4bd150 Level-0 table #246: started
+2026/04/25-09:55:54.213 4bd150 Level-0 table #246: 713459 bytes OK
+2026/04/25-09:55:54.217 4bd150 Delete type=0 #243
+2026/04/25-10:26:54.227 4bd150 Level-0 table #248: started
+2026/04/25-10:26:54.237 4bd150 Level-0 table #248: 835647 bytes OK
+2026/04/25-10:26:54.244 4bd150 Delete type=0 #245
+2026/04/25-10:26:54.245 4bd150 Compacting 4@0 + 1@1 files
+2026/04/25-10:26:54.268 4bd150 Generated table #249@0: 39 keys, 1560525 bytes
+2026/04/25-10:26:54.268 4bd150 Compacted 4@0 + 1@1 files => 1560525 bytes
+2026/04/25-10:26:54.270 4bd150 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/25-10:26:54.270 4bd150 Delete type=2 #248
+2026/04/25-10:26:54.270 4bd150 Delete type=2 #240
+2026/04/25-10:26:54.270 4bd150 Delete type=2 #242
+2026/04/25-10:26:54.270 4bd150 Delete type=2 #246
+2026/04/25-10:26:54.270 4bd150 Delete type=2 #244

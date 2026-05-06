@@ -1,0 +1,24 @@
+{
+  "name": "2026-04-20-1-2-3-4-5-6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "build": "node scripts/copy-pdf-worker.mjs && node scripts/build-fixed-import-bundle.mjs && esbuild src/main.js --bundle --format=iife --platform=browser --target=chrome110,safari16 --outfile=app.js",
+    "verify-import": "node scripts/verify-import.mjs",
+    "electron:start": "electron electron/main.cjs",
+    "atlas:file": "bash ./scripts/open-atlas.sh file",
+    "atlas:local": "bash ./scripts/open-atlas.sh local",
+    "atlas:serve": "bash ./scripts/serve-atlas.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^41.2.1",
+    "esbuild": "^0.28.0",
+    "pdfjs-dist": "^5.6.205",
+    "playwright-core": "^1.59.1"
+  },
+  "type": "module"
+}

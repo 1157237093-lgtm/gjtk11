@@ -1,0 +1,31 @@
+{
+  "paperId": "2025-Q1",
+  "paperTitle": "2025 年第 1 期题本",
+  "description": "示例题本，可先导入题干和选项，答案后续再补导。",
+  "questions": [
+    {
+      "questionNo": "1",
+      "type": "单选题",
+      "module": "基础知识",
+      "stem": "以下哪一项属于静态 HTML 方案的典型优点？",
+      "options": [
+        { "label": "A", "text": "无需后端也能部署" },
+        { "label": "B", "text": "必须依赖数据库" },
+        { "label": "C", "text": "只能处理图片" },
+        { "label": "D", "text": "无法导出数据" }
+      ]
+    },
+    {
+      "questionNo": "2",
+      "type": "多选题",
+      "module": "题库管理",
+      "stem": "题本与答案分离导入后，系统需要支持哪些能力？",
+      "options": [
+        { "label": "A", "text": "按 paperId 回填答案" },
+        { "label": "B", "text": "按 questionNo 回填答案" },
+        { "label": "C", "text": "跨期次混题" },
+        { "label": "D", "text": "错题按错因分类" }
+      ]
+    }
+  ]
+}

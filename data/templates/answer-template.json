@@ -1,0 +1,15 @@
+{
+  "paperId": "2025-Q1",
+  "answers": [
+    {
+      "questionNo": "1",
+      "correctAnswer": "A",
+      "explanation": "静态 HTML + JSON 可以直接部署在本地或静态托管平台，不依赖后端服务。"
+    },
+    {
+      "questionNo": "2",
+      "correctAnswer": ["A", "B", "D"],
+      "explanation": "答案补导需要按 paperId + questionNo 精确回填，同时错题需要支持按错因分类。"
+    }
+  ]
+}

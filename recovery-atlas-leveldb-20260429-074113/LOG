@@ -1,0 +1,366 @@
+2026/04/28-17:23:59.195 81fdc8 Reusing MANIFEST /Users/a66/Library/Application Support/com.openai.atlas/browser-data/host/user-xtBRzvRVERDoJwEdrcrpGyxN__e1844257-49f5-48ad-90a8-98c2a3b2420f/Local Storage/leveldb/MANIFEST-000001
+2026/04/28-17:23:59.199 81fdc8 Recovering log #247
+2026/04/28-17:23:59.199 81fdc8 Reusing old log /Users/a66/Library/Application Support/com.openai.atlas/browser-data/host/user-xtBRzvRVERDoJwEdrcrpGyxN__e1844257-49f5-48ad-90a8-98c2a3b2420f/Local Storage/leveldb/000247.log 
+2026/04/28-17:24:59.203 81fdce Level-0 table #252: started
+2026/04/28-17:24:59.208 81fdce Level-0 table #252: 772046 bytes OK
+2026/04/28-17:24:59.210 81fdce Delete type=0 #247
+2026/04/28-17:48:13.658 81fdce Level-0 table #254: started
+2026/04/28-17:48:13.670 81fdce Level-0 table #254: 834161 bytes OK
+2026/04/28-17:48:13.673 81fdce Delete type=0 #251
+2026/04/29-06:51:18.605 81fdce Level-0 table #256: started
+2026/04/29-06:51:18.620 81fdce Level-0 table #256: 833820 bytes OK
+2026/04/29-06:51:18.624 81fdce Delete type=0 #253
+2026/04/29-06:51:36.517 81fdce Level-0 table #258: started
+2026/04/29-06:51:36.526 81fdce Level-0 table #258: 833823 bytes OK
+2026/04/29-06:51:36.528 81fdce Delete type=0 #255
+2026/04/29-06:51:36.529 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:51:36.552 81fdce Generated table #259@0: 39 keys, 1560777 bytes
+2026/04/29-06:51:36.552 81fdce Compacted 4@0 + 1@1 files => 1560777 bytes
+2026/04/29-06:51:36.554 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:51:36.554 81fdce Delete type=2 #249
+2026/04/29-06:51:36.554 81fdce Delete type=2 #258
+2026/04/29-06:51:36.554 81fdce Delete type=2 #254
+2026/04/29-06:51:36.554 81fdce Delete type=2 #256
+2026/04/29-06:51:36.554 81fdce Delete type=2 #252
+2026/04/29-06:51:46.522 81fdce Level-0 table #261: started
+2026/04/29-06:51:46.532 81fdce Level-0 table #261: 833817 bytes OK
+2026/04/29-06:51:46.535 81fdce Delete type=0 #257
+2026/04/29-06:51:57.521 81fdce Level-0 table #263: started
+2026/04/29-06:51:57.529 81fdce Level-0 table #263: 833826 bytes OK
+2026/04/29-06:51:57.531 81fdce Delete type=0 #260
+2026/04/29-06:52:07.521 81fdce Level-0 table #265: started
+2026/04/29-06:52:07.530 81fdce Level-0 table #265: 833818 bytes OK
+2026/04/29-06:52:07.531 81fdce Delete type=0 #262
+2026/04/29-06:52:17.523 81fdce Level-0 table #267: started
+2026/04/29-06:52:17.532 81fdce Level-0 table #267: 833816 bytes OK
+2026/04/29-06:52:17.534 81fdce Delete type=0 #264
+2026/04/29-06:52:17.536 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:52:17.556 81fdce Generated table #268@0: 39 keys, 1560770 bytes
+2026/04/29-06:52:17.556 81fdce Compacted 4@0 + 1@1 files => 1560770 bytes
+2026/04/29-06:52:17.558 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:52:17.558 81fdce Delete type=2 #261
+2026/04/29-06:52:17.558 81fdce Delete type=2 #263
+2026/04/29-06:52:17.558 81fdce Delete type=2 #267
+2026/04/29-06:52:17.558 81fdce Delete type=2 #265
+2026/04/29-06:52:17.558 81fdce Delete type=2 #259
+2026/04/29-06:52:27.523 81fdce Level-0 table #270: started
+2026/04/29-06:52:27.532 81fdce Level-0 table #270: 833818 bytes OK
+2026/04/29-06:52:27.535 81fdce Delete type=0 #266
+2026/04/29-06:52:38.524 81fdce Level-0 table #272: started
+2026/04/29-06:52:38.532 81fdce Level-0 table #272: 833823 bytes OK
+2026/04/29-06:52:38.534 81fdce Delete type=0 #269
+2026/04/29-06:52:49.522 81fdce Level-0 table #274: started
+2026/04/29-06:52:49.527 81fdce Level-0 table #274: 833823 bytes OK
+2026/04/29-06:52:49.528 81fdce Delete type=0 #271
+2026/04/29-06:52:59.518 81fdce Level-0 table #276: started
+2026/04/29-06:52:59.526 81fdce Level-0 table #276: 833818 bytes OK
+2026/04/29-06:52:59.528 81fdce Delete type=0 #273
+2026/04/29-06:52:59.529 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:52:59.548 81fdce Generated table #277@0: 39 keys, 1560772 bytes
+2026/04/29-06:52:59.548 81fdce Compacted 4@0 + 1@1 files => 1560772 bytes
+2026/04/29-06:52:59.549 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:52:59.550 81fdce Delete type=2 #274
+2026/04/29-06:52:59.550 81fdce Delete type=2 #276
+2026/04/29-06:52:59.550 81fdce Delete type=2 #272
+2026/04/29-06:52:59.550 81fdce Delete type=2 #270
+2026/04/29-06:52:59.550 81fdce Delete type=2 #268
+2026/04/29-06:53:04.705 81fdce Level-0 table #279: started
+2026/04/29-06:53:04.714 81fdce Level-0 table #279: 833810 bytes OK
+2026/04/29-06:53:04.716 81fdce Delete type=0 #275
+2026/04/29-06:53:10.524 81fdce Level-0 table #281: started
+2026/04/29-06:53:10.531 81fdce Level-0 table #281: 833760 bytes OK
+2026/04/29-06:53:10.533 81fdce Delete type=0 #278
+2026/04/29-06:53:20.524 81fdce Level-0 table #283: started
+2026/04/29-06:53:20.532 81fdce Level-0 table #283: 833762 bytes OK
+2026/04/29-06:53:20.535 81fdce Delete type=0 #280
+2026/04/29-06:53:31.519 81fdce Level-0 table #285: started
+2026/04/29-06:53:31.524 81fdce Level-0 table #285: 833766 bytes OK
+2026/04/29-06:53:31.526 81fdce Delete type=0 #282
+2026/04/29-06:53:31.527 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:53:31.540 81fdce Generated table #286@0: 39 keys, 1560789 bytes
+2026/04/29-06:53:31.540 81fdce Compacted 4@0 + 1@1 files => 1560789 bytes
+2026/04/29-06:53:31.541 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:53:31.541 81fdce Delete type=2 #277
+2026/04/29-06:53:31.541 81fdce Delete type=2 #283
+2026/04/29-06:53:31.541 81fdce Delete type=2 #281
+2026/04/29-06:53:31.541 81fdce Delete type=2 #285
+2026/04/29-06:53:31.541 81fdce Delete type=2 #279
+2026/04/29-06:53:36.696 81fdce Level-0 table #288: started
+2026/04/29-06:53:36.702 81fdce Level-0 table #288: 833818 bytes OK
+2026/04/29-06:53:36.704 81fdce Delete type=0 #284
+2026/04/29-06:53:42.517 81fdce Level-0 table #290: started
+2026/04/29-06:53:42.524 81fdce Level-0 table #290: 833831 bytes OK
+2026/04/29-06:53:42.526 81fdce Delete type=0 #287
+2026/04/29-06:53:52.521 81fdce Level-0 table #292: started
+2026/04/29-06:53:52.529 81fdce Level-0 table #292: 833906 bytes OK
+2026/04/29-06:53:52.532 81fdce Delete type=0 #289
+2026/04/29-06:54:02.524 81fdce Level-0 table #294: started
+2026/04/29-06:54:02.533 81fdce Level-0 table #294: 833909 bytes OK
+2026/04/29-06:54:02.535 81fdce Delete type=0 #291
+2026/04/29-06:54:02.536 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:54:02.555 81fdce Generated table #295@0: 39 keys, 1555516 bytes
+2026/04/29-06:54:02.555 81fdce Compacted 4@0 + 1@1 files => 1555516 bytes
+2026/04/29-06:54:02.556 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:54:02.557 81fdce Delete type=2 #288
+2026/04/29-06:54:02.557 81fdce Delete type=2 #294
+2026/04/29-06:54:02.557 81fdce Delete type=2 #290
+2026/04/29-06:54:02.557 81fdce Delete type=2 #286
+2026/04/29-06:54:02.557 81fdce Delete type=2 #292
+2026/04/29-06:54:12.523 81fdce Level-0 table #297: started
+2026/04/29-06:54:12.531 81fdce Level-0 table #297: 833911 bytes OK
+2026/04/29-06:54:12.533 81fdce Delete type=0 #293
+2026/04/29-06:54:23.523 81fdce Level-0 table #299: started
+2026/04/29-06:54:23.531 81fdce Level-0 table #299: 833912 bytes OK
+2026/04/29-06:54:23.533 81fdce Delete type=0 #296
+2026/04/29-06:54:34.522 81fdce Level-0 table #301: started
+2026/04/29-06:54:34.526 81fdce Level-0 table #301: 833910 bytes OK
+2026/04/29-06:54:34.528 81fdce Delete type=0 #298
+2026/04/29-06:54:44.524 81fdce Level-0 table #303: started
+2026/04/29-06:54:44.533 81fdce Level-0 table #303: 834248 bytes OK
+2026/04/29-06:54:44.535 81fdce Delete type=0 #300
+2026/04/29-06:54:44.536 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:54:44.554 81fdce Generated table #304@0: 39 keys, 1556012 bytes
+2026/04/29-06:54:44.555 81fdce Compacted 4@0 + 1@1 files => 1556012 bytes
+2026/04/29-06:54:44.555 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:54:44.556 81fdce Delete type=2 #301
+2026/04/29-06:54:44.556 81fdce Delete type=2 #303
+2026/04/29-06:54:44.556 81fdce Delete type=2 #299
+2026/04/29-06:54:44.556 81fdce Delete type=2 #297
+2026/04/29-06:54:44.556 81fdce Delete type=2 #295
+2026/04/29-06:54:54.522 81fdce Level-0 table #306: started
+2026/04/29-06:54:54.530 81fdce Level-0 table #306: 834026 bytes OK
+2026/04/29-06:54:54.532 81fdce Delete type=0 #302
+2026/04/29-06:55:05.520 81fdce Level-0 table #308: started
+2026/04/29-06:55:05.528 81fdce Level-0 table #308: 834025 bytes OK
+2026/04/29-06:55:05.530 81fdce Delete type=0 #305
+2026/04/29-06:55:15.520 81fdce Level-0 table #310: started
+2026/04/29-06:55:15.524 81fdce Level-0 table #310: 834208 bytes OK
+2026/04/29-06:55:15.526 81fdce Delete type=0 #307
+2026/04/29-06:55:25.524 81fdce Level-0 table #312: started
+2026/04/29-06:55:25.532 81fdce Level-0 table #312: 834343 bytes OK
+2026/04/29-06:55:25.534 81fdce Delete type=0 #309
+2026/04/29-06:55:25.535 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:55:25.554 81fdce Generated table #313@0: 39 keys, 1556883 bytes
+2026/04/29-06:55:25.554 81fdce Compacted 4@0 + 1@1 files => 1556883 bytes
+2026/04/29-06:55:25.555 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:55:25.556 81fdce Delete type=2 #312
+2026/04/29-06:55:25.556 81fdce Delete type=2 #306
+2026/04/29-06:55:25.556 81fdce Delete type=2 #310
+2026/04/29-06:55:25.556 81fdce Delete type=2 #304
+2026/04/29-06:55:25.556 81fdce Delete type=2 #308
+2026/04/29-06:55:35.525 81fdce Level-0 table #315: started
+2026/04/29-06:55:35.535 81fdce Level-0 table #315: 834362 bytes OK
+2026/04/29-06:55:35.536 81fdce Delete type=0 #311
+2026/04/29-06:55:45.526 81fdce Level-0 table #317: started
+2026/04/29-06:55:45.535 81fdce Level-0 table #317: 834363 bytes OK
+2026/04/29-06:55:45.536 81fdce Delete type=0 #314
+2026/04/29-06:55:50.709 81fdce Level-0 table #319: started
+2026/04/29-06:55:50.717 81fdce Level-0 table #319: 833819 bytes OK
+2026/04/29-06:55:50.720 81fdce Delete type=0 #316
+2026/04/29-06:56:01.701 81fdce Level-0 table #321: started
+2026/04/29-06:56:01.706 81fdce Level-0 table #321: 833818 bytes OK
+2026/04/29-06:56:01.707 81fdce Delete type=0 #318
+2026/04/29-06:56:01.707 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:56:01.719 81fdce Generated table #322@0: 39 keys, 1560772 bytes
+2026/04/29-06:56:01.719 81fdce Compacted 4@0 + 1@1 files => 1560772 bytes
+2026/04/29-06:56:01.719 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:56:01.720 81fdce Delete type=2 #315
+2026/04/29-06:56:01.720 81fdce Delete type=2 #317
+2026/04/29-06:56:01.720 81fdce Delete type=2 #313
+2026/04/29-06:56:01.720 81fdce Delete type=2 #321
+2026/04/29-06:56:01.720 81fdce Delete type=2 #319
+2026/04/29-06:56:11.699 81fdce Level-0 table #324: started
+2026/04/29-06:56:11.708 81fdce Level-0 table #324: 833823 bytes OK
+2026/04/29-06:56:11.710 81fdce Delete type=0 #320
+2026/04/29-06:56:21.708 81fdce Level-0 table #326: started
+2026/04/29-06:56:21.717 81fdce Level-0 table #326: 833822 bytes OK
+2026/04/29-06:56:21.719 81fdce Delete type=0 #323
+2026/04/29-06:56:31.701 81fdce Level-0 table #328: started
+2026/04/29-06:56:31.710 81fdce Level-0 table #328: 833821 bytes OK
+2026/04/29-06:56:31.712 81fdce Delete type=0 #325
+2026/04/29-06:56:37.527 81fdce Level-0 table #330: started
+2026/04/29-06:56:37.536 81fdce Level-0 table #330: 834828 bytes OK
+2026/04/29-06:56:37.538 81fdce Delete type=0 #327
+2026/04/29-06:56:37.539 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:56:37.558 81fdce Generated table #331@0: 39 keys, 1555400 bytes
+2026/04/29-06:56:37.558 81fdce Compacted 4@0 + 1@1 files => 1555400 bytes
+2026/04/29-06:56:37.560 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:56:37.560 81fdce Delete type=2 #328
+2026/04/29-06:56:37.560 81fdce Delete type=2 #322
+2026/04/29-06:56:37.560 81fdce Delete type=2 #326
+2026/04/29-06:56:37.560 81fdce Delete type=2 #324
+2026/04/29-06:56:37.560 81fdce Delete type=2 #330
+2026/04/29-06:56:47.522 81fdce Level-0 table #333: started
+2026/04/29-06:56:47.527 81fdce Level-0 table #333: 834832 bytes OK
+2026/04/29-06:56:47.529 81fdce Delete type=0 #329
+2026/04/29-06:56:57.518 81fdce Level-0 table #335: started
+2026/04/29-06:56:57.524 81fdce Level-0 table #335: 834230 bytes OK
+2026/04/29-06:56:57.527 81fdce Delete type=0 #332
+2026/04/29-06:57:02.705 81fdce Level-0 table #337: started
+2026/04/29-06:57:02.713 81fdce Level-0 table #337: 833824 bytes OK
+2026/04/29-06:57:02.715 81fdce Delete type=0 #334
+2026/04/29-06:57:13.708 81fdce Level-0 table #339: started
+2026/04/29-06:57:13.717 81fdce Level-0 table #339: 833818 bytes OK
+2026/04/29-06:57:13.719 81fdce Delete type=0 #336
+2026/04/29-06:57:13.719 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:57:13.735 81fdce Generated table #340@0: 39 keys, 1560772 bytes
+2026/04/29-06:57:13.735 81fdce Compacted 4@0 + 1@1 files => 1560772 bytes
+2026/04/29-06:57:13.735 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:57:13.736 81fdce Delete type=2 #339
+2026/04/29-06:57:13.736 81fdce Delete type=2 #335
+2026/04/29-06:57:13.736 81fdce Delete type=2 #337
+2026/04/29-06:57:13.736 81fdce Delete type=2 #333
+2026/04/29-06:57:13.736 81fdce Delete type=2 #331
+2026/04/29-06:57:24.705 81fdce Level-0 table #342: started
+2026/04/29-06:57:24.709 81fdce Level-0 table #342: 833817 bytes OK
+2026/04/29-06:57:24.711 81fdce Delete type=0 #338
+2026/04/29-06:57:35.701 81fdce Level-0 table #344: started
+2026/04/29-06:57:35.711 81fdce Level-0 table #344: 833823 bytes OK
+2026/04/29-06:57:35.713 81fdce Delete type=0 #341
+2026/04/29-06:57:45.706 81fdce Level-0 table #346: started
+2026/04/29-06:57:45.711 81fdce Level-0 table #346: 833826 bytes OK
+2026/04/29-06:57:45.712 81fdce Delete type=0 #343
+2026/04/29-06:57:56.698 81fdce Level-0 table #348: started
+2026/04/29-06:57:56.703 81fdce Level-0 table #348: 833824 bytes OK
+2026/04/29-06:57:56.705 81fdce Delete type=0 #345
+2026/04/29-06:57:56.705 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:57:56.716 81fdce Generated table #349@0: 39 keys, 1560778 bytes
+2026/04/29-06:57:56.716 81fdce Compacted 4@0 + 1@1 files => 1560778 bytes
+2026/04/29-06:57:56.717 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:57:56.717 81fdce Delete type=2 #348
+2026/04/29-06:57:56.717 81fdce Delete type=2 #342
+2026/04/29-06:57:56.717 81fdce Delete type=2 #340
+2026/04/29-06:57:56.717 81fdce Delete type=2 #344
+2026/04/29-06:57:56.717 81fdce Delete type=2 #346
+2026/04/29-06:58:06.708 81fdce Level-0 table #351: started
+2026/04/29-06:58:06.720 81fdce Level-0 table #351: 833818 bytes OK
+2026/04/29-06:58:06.722 81fdce Delete type=0 #347
+2026/04/29-06:58:17.703 81fdce Level-0 table #353: started
+2026/04/29-06:58:17.714 81fdce Level-0 table #353: 833824 bytes OK
+2026/04/29-06:58:17.716 81fdce Delete type=0 #350
+2026/04/29-06:58:28.703 81fdce Level-0 table #355: started
+2026/04/29-06:58:28.712 81fdce Level-0 table #355: 833834 bytes OK
+2026/04/29-06:58:28.715 81fdce Delete type=0 #352
+2026/04/29-06:58:39.701 81fdce Level-0 table #357: started
+2026/04/29-06:58:39.710 81fdce Level-0 table #357: 833825 bytes OK
+2026/04/29-06:58:39.712 81fdce Delete type=0 #354
+2026/04/29-06:58:39.713 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:58:39.727 81fdce Generated table #358@0: 39 keys, 1560780 bytes
+2026/04/29-06:58:39.727 81fdce Compacted 4@0 + 1@1 files => 1560780 bytes
+2026/04/29-06:58:39.728 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:58:39.729 81fdce Delete type=2 #349
+2026/04/29-06:58:39.729 81fdce Delete type=2 #357
+2026/04/29-06:58:39.729 81fdce Delete type=2 #355
+2026/04/29-06:58:39.729 81fdce Delete type=2 #351
+2026/04/29-06:58:39.729 81fdce Delete type=2 #353
+2026/04/29-06:58:50.701 81fdce Level-0 table #360: started
+2026/04/29-06:58:50.706 81fdce Level-0 table #360: 833822 bytes OK
+2026/04/29-06:58:50.708 81fdce Delete type=0 #356
+2026/04/29-06:59:00.704 81fdce Level-0 table #362: started
+2026/04/29-06:59:00.714 81fdce Level-0 table #362: 833825 bytes OK
+2026/04/29-06:59:00.717 81fdce Delete type=0 #359
+2026/04/29-06:59:11.708 81fdce Level-0 table #364: started
+2026/04/29-06:59:11.719 81fdce Level-0 table #364: 833813 bytes OK
+2026/04/29-06:59:11.721 81fdce Delete type=0 #361
+2026/04/29-06:59:22.529 81fdce Level-0 table #366: started
+2026/04/29-06:59:22.534 81fdce Level-0 table #366: 833816 bytes OK
+2026/04/29-06:59:22.536 81fdce Delete type=0 #363
+2026/04/29-06:59:22.536 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-06:59:22.547 81fdce Generated table #367@0: 39 keys, 1560770 bytes
+2026/04/29-06:59:22.547 81fdce Compacted 4@0 + 1@1 files => 1560770 bytes
+2026/04/29-06:59:22.547 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-06:59:22.548 81fdce Delete type=2 #362
+2026/04/29-06:59:22.548 81fdce Delete type=2 #360
+2026/04/29-06:59:22.548 81fdce Delete type=2 #358
+2026/04/29-06:59:22.548 81fdce Delete type=2 #364
+2026/04/29-06:59:22.548 81fdce Delete type=2 #366
+2026/04/29-06:59:32.520 81fdce Level-0 table #369: started
+2026/04/29-06:59:32.529 81fdce Level-0 table #369: 834591 bytes OK
+2026/04/29-06:59:32.531 81fdce Delete type=0 #365
+2026/04/29-06:59:43.525 81fdce Level-0 table #371: started
+2026/04/29-06:59:43.531 81fdce Level-0 table #371: 834592 bytes OK
+2026/04/29-06:59:43.532 81fdce Delete type=0 #368
+2026/04/29-06:59:53.529 81fdce Level-0 table #373: started
+2026/04/29-06:59:53.533 81fdce Level-0 table #373: 835134 bytes OK
+2026/04/29-06:59:53.535 81fdce Delete type=0 #370
+2026/04/29-07:00:03.529 81fdce Level-0 table #375: started
+2026/04/29-07:00:03.537 81fdce Level-0 table #375: 835137 bytes OK
+2026/04/29-07:00:03.539 81fdce Delete type=0 #372
+2026/04/29-07:00:03.539 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-07:00:03.559 81fdce Generated table #376@0: 39 keys, 1556504 bytes
+2026/04/29-07:00:03.559 81fdce Compacted 4@0 + 1@1 files => 1556504 bytes
+2026/04/29-07:00:03.560 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-07:00:03.560 81fdce Delete type=2 #375
+2026/04/29-07:00:03.560 81fdce Delete type=2 #371
+2026/04/29-07:00:03.560 81fdce Delete type=2 #373
+2026/04/29-07:00:03.560 81fdce Delete type=2 #367
+2026/04/29-07:00:03.560 81fdce Delete type=2 #369
+2026/04/29-07:00:13.530 81fdce Level-0 table #378: started
+2026/04/29-07:00:13.539 81fdce Level-0 table #378: 834630 bytes OK
+2026/04/29-07:00:13.541 81fdce Delete type=0 #374
+2026/04/29-07:00:24.526 81fdce Level-0 table #380: started
+2026/04/29-07:00:24.535 81fdce Level-0 table #380: 834638 bytes OK
+2026/04/29-07:00:24.537 81fdce Delete type=0 #377
+2026/04/29-07:00:34.526 81fdce Level-0 table #382: started
+2026/04/29-07:00:34.532 81fdce Level-0 table #382: 834819 bytes OK
+2026/04/29-07:00:34.533 81fdce Delete type=0 #379
+2026/04/29-07:00:44.530 81fdce Level-0 table #384: started
+2026/04/29-07:00:44.535 81fdce Level-0 table #384: 834588 bytes OK
+2026/04/29-07:00:44.537 81fdce Delete type=0 #381
+2026/04/29-07:00:44.538 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-07:00:44.553 81fdce Generated table #385@0: 39 keys, 1556099 bytes
+2026/04/29-07:00:44.553 81fdce Compacted 4@0 + 1@1 files => 1556099 bytes
+2026/04/29-07:00:44.553 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-07:00:44.554 81fdce Delete type=2 #376
+2026/04/29-07:00:44.554 81fdce Delete type=2 #380
+2026/04/29-07:00:44.554 81fdce Delete type=2 #382
+2026/04/29-07:00:44.554 81fdce Delete type=2 #378
+2026/04/29-07:00:44.554 81fdce Delete type=2 #384
+2026/04/29-07:00:54.526 81fdce Level-0 table #387: started
+2026/04/29-07:00:54.535 81fdce Level-0 table #387: 834588 bytes OK
+2026/04/29-07:00:54.537 81fdce Delete type=0 #383
+2026/04/29-07:01:04.528 81fdce Level-0 table #389: started
+2026/04/29-07:01:04.536 81fdce Level-0 table #389: 834832 bytes OK
+2026/04/29-07:01:04.537 81fdce Delete type=0 #386
+2026/04/29-07:01:14.528 81fdce Level-0 table #391: started
+2026/04/29-07:01:14.533 81fdce Level-0 table #391: 834833 bytes OK
+2026/04/29-07:01:14.535 81fdce Delete type=0 #388
+2026/04/29-07:01:24.523 81fdce Level-0 table #393: started
+2026/04/29-07:01:24.533 81fdce Level-0 table #393: 834833 bytes OK
+2026/04/29-07:01:24.535 81fdce Delete type=0 #390
+2026/04/29-07:01:24.535 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-07:01:24.553 81fdce Generated table #394@0: 39 keys, 1556227 bytes
+2026/04/29-07:01:24.553 81fdce Compacted 4@0 + 1@1 files => 1556227 bytes
+2026/04/29-07:01:24.554 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-07:01:24.554 81fdce Delete type=2 #389
+2026/04/29-07:01:24.554 81fdce Delete type=2 #393
+2026/04/29-07:01:24.554 81fdce Delete type=2 #387
+2026/04/29-07:01:24.555 81fdce Delete type=2 #391
+2026/04/29-07:01:24.555 81fdce Delete type=2 #385
+2026/04/29-07:01:34.530 81fdce Level-0 table #396: started
+2026/04/29-07:01:34.535 81fdce Level-0 table #396: 834834 bytes OK
+2026/04/29-07:01:34.536 81fdce Delete type=0 #392
+2026/04/29-07:03:42.629 81fdce Level-0 table #398: started
+2026/04/29-07:03:42.635 81fdce Level-0 table #398: 834748 bytes OK
+2026/04/29-07:03:42.637 81fdce Delete type=0 #395
+2026/04/29-07:16:08.251 81fdce Level-0 table #400: started
+2026/04/29-07:16:08.260 81fdce Level-0 table #400: 833821 bytes OK
+2026/04/29-07:16:08.264 81fdce Delete type=0 #397
+2026/04/29-07:28:33.872 81fdce Level-0 table #402: started
+2026/04/29-07:28:33.885 81fdce Level-0 table #402: 833824 bytes OK
+2026/04/29-07:28:33.888 81fdce Delete type=0 #399
+2026/04/29-07:28:33.889 81fdce Compacting 4@0 + 1@1 files
+2026/04/29-07:28:33.905 81fdce Generated table #403@0: 39 keys, 1560778 bytes
+2026/04/29-07:28:33.905 81fdce Compacted 4@0 + 1@1 files => 1560778 bytes
+2026/04/29-07:28:33.907 81fdce compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/29-07:28:33.907 81fdce Delete type=2 #402
+2026/04/29-07:28:33.907 81fdce Delete type=2 #400
+2026/04/29-07:28:33.907 81fdce Delete type=2 #398
+2026/04/29-07:28:33.907 81fdce Delete type=2 #394
+2026/04/29-07:28:33.907 81fdce Delete type=2 #396
+2026/04/29-07:28:42.841 81fdce Level-0 table #405: started
+2026/04/29-07:28:42.853 81fdce Level-0 table #405: 834584 bytes OK
+2026/04/29-07:28:42.855 81fdce Delete type=0 #401
+2026/04/29-07:41:00.722 81fdce Level-0 table #407: started
+2026/04/29-07:41:00.732 81fdce Level-0 table #407: 834583 bytes OK
+2026/04/29-07:41:00.736 81fdce Delete type=0 #404
