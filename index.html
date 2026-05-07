@@ -148,26 +148,11 @@
 
           <section class="filter-panel">
             <div class="filter-row wide">
-              <label>
-                分类
-                <select id="recitation-filter-category"></select>
-              </label>
-              <label>
-                掌握度
-                <select id="recitation-filter-mastery"></select>
-              </label>
-              <label>
-                来源
-                <select id="recitation-filter-source"></select>
-              </label>
-              <label>
-                标签
-                <select id="recitation-filter-tag"></select>
-              </label>
-              <label>
-                关键词
-                <input id="recitation-filter-keyword" type="search" placeholder="搜索标题 / 关键词 / 规则" />
-              </label>
+              <label>分类<select id="recitation-filter-category"></select></label>
+              <label>掌握度<select id="recitation-filter-mastery"></select></label>
+              <label>来源<select id="recitation-filter-source"></select></label>
+              <label>标签<select id="recitation-filter-tag"></select></label>
+              <label>关键词<input id="recitation-filter-keyword" type="search" placeholder="搜索标题 / 关键词 / 规则" /></label>
             </div>
             <div class="filter-actions">
               <button id="recitation-filter-due" class="secondary">只看到期复习</button>
@@ -199,22 +184,12 @@
               <input id="abnormal-file-input" type="file" accept="application/json,.json" hidden />
             </div>
           </div>
-
           <div id="abnormal-summary" class="summary-grid"></div>
           <section class="filter-panel">
             <div class="filter-row wide">
-              <label>
-                异常类型
-                <select id="abnormal-filter-type"></select>
-              </label>
-              <label>
-                期次
-                <select id="abnormal-filter-paper"></select>
-              </label>
-              <label>
-                搜索
-                <input id="abnormal-filter-keyword" type="search" placeholder="题号 / 题干 / 选项" />
-              </label>
+              <label>异常类型<select id="abnormal-filter-type"></select></label>
+              <label>期次<select id="abnormal-filter-paper"></select></label>
+              <label>搜索<input id="abnormal-filter-keyword" type="search" placeholder="题号 / 题干 / 选项" /></label>
             </div>
           </section>
           <div id="abnormal-list" class="abnormal-list"></div>
@@ -237,22 +212,13 @@
               <button id="mode-exam" class="mode-pill">考试模式</button>
             </div>
           </div>
-
           <div id="paper-summary" class="summary-grid"></div>
           <div id="paper-timing-panel" class="timing-panel" hidden></div>
-
           <section class="filter-panel">
             <div class="filter-row">
-              <label>
-                模块
-                <select id="paper-filter-module"></select>
-              </label>
-              <label>
-                题型
-                <select id="paper-filter-type"></select>
-              </label>
-              <label>
-                状态
+              <label>模块<select id="paper-filter-module"></select></label>
+              <label>题型<select id="paper-filter-type"></select></label>
+              <label>状态
                 <select id="paper-filter-status">
                   <option value="all">全部</option>
                   <option value="unanswered">未做</option>
@@ -273,7 +239,6 @@
               <button id="reset-paper-filters" class="secondary">重置筛选</button>
             </div>
           </section>
-
           <div id="paper-question-list" class="question-list"></div>
           <div id="empty-paper" class="empty-state" hidden>
             <h3>当前筛选下没有题目</h3>
@@ -303,28 +268,14 @@
             </div>
           </div>
           <div id="icloud-export-status" class="message-bar export-status"></div>
-
           <section class="filter-panel">
             <div class="filter-row wide">
-              <label>
-                期次
-                <select id="wrong-filter-paper"></select>
-              </label>
-              <label>
-                模块
-                <select id="wrong-filter-module"></select>
-              </label>
-              <label>
-                题型
-                <select id="wrong-filter-type"></select>
-              </label>
-              <label>
-                <span id="notebook-reason-label">错因</span>
-                <select id="wrong-filter-reason"></select>
-              </label>
+              <label>期次<select id="wrong-filter-paper"></select></label>
+              <label>模块<select id="wrong-filter-module"></select></label>
+              <label>题型<select id="wrong-filter-type"></select></label>
+              <label><span id="notebook-reason-label">错因</span><select id="wrong-filter-reason"></select></label>
             </div>
           </section>
-
           <div id="wrong-summary" class="summary-grid"></div>
           <div id="wrong-insights" class="insight-panel" hidden></div>
           <div id="quarantine-summary" class="insight-panel warning-panel" hidden></div>
@@ -339,6 +290,6 @@
 
     <script src="./autoload-data.js?v=parser-ai-option-fix-20260501"></script>
     <script src="./app.js?v=auto-recitation-abnormal-20260505"></script>
-    <script src="./question-card-auto-linker.js?v=auto-card-linker-20260507"></script>
+    <script src="./question-card-auto-linker-v2.js?v=auto-selected-card-20260507"></script>
   </body>
 </html>
