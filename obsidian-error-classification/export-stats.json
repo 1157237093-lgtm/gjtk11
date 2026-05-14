@@ -1,7 +1,12 @@
 {
   "total": 151,
   "matchedCount": 1,
-  "pendingCount": 150,
+  "manualCount": 1,
+  "inferredCount": 150,
+  "pendingCount": 0,
+  "highPriorityCount": 116,
+  "mediumPriorityCount": 27,
+  "lowPriorityCount": 8,
   "trainingGroupCounts": {
     "04-时政原话固定搭配": 9,
     "01-材料核心效果判断": 76,
