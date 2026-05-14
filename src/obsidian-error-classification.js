@@ -106,6 +106,161 @@ function isReverseQuestion(text) {
   ]);
 }
 
+function isMaterialEffectQuestion(text) {
+  return hasAny(text, [
+    "主要意在",
+    "主要表明",
+    "主要体现",
+    "体现了",
+    "说明",
+    "这说明",
+    "表明",
+    "旨在",
+    "有利于",
+    "作用",
+    "目的",
+    "意义",
+    "反映出",
+    "以上做法",
+    "上述做法",
+    "上述材料",
+    "这表明",
+    "这体现",
+    "这反映",
+  ]);
+}
+
+function isStrictPhilosophyQuestion(question, text) {
+  const module = compact(question?.module);
+  if (hasAny(module, ["哲学", "马哲", "马克思主义哲学", "唯物辩证法", "历史唯物主义"])) {
+    return true;
+  }
+  return hasAny(text, [
+    "矛盾同一性",
+    "矛盾斗争性",
+    "对立统一",
+    "量变质变",
+    "量变和质变",
+    "否定之否定",
+    "实践是认识的来源",
+    "实践是检验真理",
+    "认识的反复性",
+    "认识的无限性",
+    "主观能动性",
+    "物质决定意识",
+    "意识对物质",
+    "社会存在决定社会意识",
+    "生产力决定生产关系",
+    "经济基础决定上层建筑",
+    "主要矛盾",
+    "矛盾的主要方面",
+    "具体问题具体分析",
+    "普遍联系",
+    "系统优化",
+    "价值判断和价值选择",
+    "人民群众是历史的创造者",
+    "转危为机",
+    "化险为夷",
+    "危中有机",
+  ]);
+}
+
+function isLawOfficialDocumentManagement(text) {
+  return hasAny(text, [
+    "宪法",
+    "民法典",
+    "刑法",
+    "行政法",
+    "行政许可",
+    "行政处罚",
+    "行政强制",
+    "行政复议",
+    "行政诉讼",
+    "监察法",
+    "公务员法",
+    "劳动合同",
+    "法定",
+    "法律责任",
+    "管辖",
+    "公文",
+    "请示",
+    "报告",
+    "函",
+    "通知",
+    "决定",
+    "纪要",
+    "主送机关",
+    "发文字号",
+    "成文日期",
+    "版记",
+    "印发",
+    "管理幅度",
+    "管理层次",
+    "组织结构",
+    "公共管理",
+  ]);
+}
+
+function isLiteratureHistoryScience(text) {
+  return hasAny(text, [
+    "朝代",
+    "春秋",
+    "战国",
+    "秦朝",
+    "汉朝",
+    "唐朝",
+    "宋朝",
+    "元朝",
+    "明朝",
+    "清朝",
+    "诗经",
+    "论语",
+    "史记",
+    "资治通鉴",
+    "尔雅",
+    "淮南子",
+    "杜甫",
+    "李白",
+    "苏轼",
+    "白居易",
+    "二十四节气",
+    "四渎",
+    "月球",
+    "地震",
+    "火山",
+    "细胞",
+    "基因",
+    "疫苗",
+    "量子",
+    "航天",
+    "北斗",
+  ]);
+}
+
+function isOriginalPoliticalWording(text) {
+  return hasAny(text, [
+    "强身治病",
+    "锐利武器",
+    "第一需求",
+    "必由之路",
+    "兜底性基础性制度安排",
+    "习近平总书记指出",
+    "习近平总书记强调",
+    "重要讲话指出",
+    "中央经济工作会议指出",
+    "政府工作报告提出",
+    "党的二十届三中全会指出",
+    "中国式现代化的本质要求",
+    "新质生产力的核心要素",
+    "两个确立",
+    "两个维护",
+    "四个意识",
+    "四个自信",
+    "五位一体",
+    "四个全面",
+  ]);
+}
+
 function inferredClassification(question) {
   const rawText = questionText(question);
   const text = compact(rawText);
@@ -130,47 +285,7 @@ function inferredClassification(question) {
     };
   }
 
-  if (hasAny(text, ["矛盾", "同一性", "斗争性", "量变", "质变", "否定之否定", "实践", "认识", "真理", "价值", "规律", "联系", "发展", "意识", "物质", "辩证法", "历史唯物主义", "唯物辩证法", "转危为机", "化险为夷", "危中有机"])) {
-    return {
-      training_group: "05-哲学关键词识别",
-      error_type: "哲学关键词混淆",
-      wrong_reason: "哲学题容易只看材料表面词，忽略关键词对应的固定原理。",
-      next_rule: "先定位哲学关键词，再匹配原理，最后检查选项有没有偷换成其他哲学范畴。",
-      inferred_classification: true,
-    };
-  }
-
-  if (hasAny(text, ["宪法", "民法典", "刑法", "行政法", "行政许可", "行政处罚", "行政复议", "行政诉讼", "监察法", "公务员法", "劳动合同", "法定", "法律责任", "管辖", "公文", "请示", "报告", "函", "通知", "决定", "纪要", "主送机关", "发文字号", "成文日期", "版记", "印发", "管理幅度", "管理层次", "组织结构", "公共管理"] )) {
-    return {
-      training_group: "06-法律公文管理硬规则",
-      error_type: "法律公文规则薄弱",
-      wrong_reason: "此类题主要考固定规则，不能靠材料语感猜。",
-      next_rule: "先回忆法条、公文或管理学固定规则，再判断选项是否越权、错主体、错程序、错格式。",
-      inferred_classification: true,
-    };
-  }
-
-  if (hasAny(text, ["朝代", "秦", "汉", "唐", "宋", "元", "明", "清", "春秋", "战国", "古代", "诗经", "论语", "史记", "资治通鉴", "杜甫", "李白", "苏轼", "物理", "化学", "生物", "地理", "天文", "节气", "太阳", "月球", "地震", "火山", "细胞", "基因", "疫苗", "芯片", "量子", "航天", "北斗"] )) {
-    return {
-      training_group: "07-文史科技常识",
-      error_type: "文史科技常识缺口",
-      wrong_reason: "题目依赖稳定常识或固定事实，无法通过材料推理完全推出。",
-      next_rule: "把错误事实做成一问一答卡，优先记时间、主体、作品、概念和适用场景。",
-      inferred_classification: true,
-    };
-  }
-
-  if (hasAny(text, ["党的二十届", "中央经济工作会议", "中央农村工作会议", "政府工作报告", "习近平", "总书记", "重要讲话", "重要指示", "中国式现代化", "新质生产力", "高质量发展", "全过程人民民主", "共同富裕", "两个维护", "四个意识", "四个自信", "五位一体", "四个全面", "人民至上", "自我革命", "两个确立", "三农", "乡村全面振兴"] )) {
-    return {
-      training_group: "04-时政原话固定搭配",
-      error_type: "时政原话记忆不准",
-      wrong_reason: "时政题常考原话搭配和政策表述，凭近义词替换容易选偏。",
-      next_rule: "优先核对主语、谓语、对象、限定词和固定搭配，看到原文出处题要按原话判。",
-      inferred_classification: true,
-    };
-  }
-
-  if (hasAny(text, ["主要意在", "主要表明", "主要体现", "体现了", "说明", "这说明", "表明", "旨在", "有利于", "作用", "目的", "意义", "反映出", "材料中", "以上做法", "上述做法", "上述材料", "这表明", "这体现"])) {
+  if (isMaterialEffectQuestion(text)) {
     return {
       training_group: "01-材料核心效果判断",
       error_type: "材料核心效果判断不稳",
@@ -180,7 +295,47 @@ function inferredClassification(question) {
     };
   }
 
-  if (hasAny(text, ["最符合", "最佳", "应当", "更", "准确", "根本", "关键", "核心", "基础", "前提", "保障", "动力", "路径"])) {
+  if (isLawOfficialDocumentManagement(text)) {
+    return {
+      training_group: "06-法律公文管理硬规则",
+      error_type: "法律公文规则薄弱",
+      wrong_reason: "此类题主要考固定规则，不能靠材料语感猜。",
+      next_rule: "先回忆法条、公文或管理学固定规则，再判断选项是否越权、错主体、错程序、错格式。",
+      inferred_classification: true,
+    };
+  }
+
+  if (isStrictPhilosophyQuestion(question, text)) {
+    return {
+      training_group: "05-哲学关键词识别",
+      error_type: "哲学关键词混淆",
+      wrong_reason: "哲学题容易只看材料表面词，忽略关键词对应的固定原理。",
+      next_rule: "先定位哲学关键词，再匹配原理，最后检查选项有没有偷换成其他哲学范畴。",
+      inferred_classification: true,
+    };
+  }
+
+  if (isOriginalPoliticalWording(text)) {
+    return {
+      training_group: "04-时政原话固定搭配",
+      error_type: "时政原话记忆不准",
+      wrong_reason: "时政题常考原话搭配和政策表述，凭近义词替换容易选偏。",
+      next_rule: "优先核对主语、谓语、对象、限定词和固定搭配，看到原文出处题要按原话判。",
+      inferred_classification: true,
+    };
+  }
+
+  if (isLiteratureHistoryScience(text)) {
+    return {
+      training_group: "07-文史科技常识",
+      error_type: "文史科技常识缺口",
+      wrong_reason: "题目依赖稳定常识或固定事实，无法通过材料推理完全推出。",
+      next_rule: "把错误事实做成一问一答卡，优先记时间、主体、作品、概念和适用场景。",
+      inferred_classification: true,
+    };
+  }
+
+  if (hasAny(text, ["最符合", "最佳", "应当", "更", "准确", "根本", "关键", "核心", "基础", "前提", "保障", "动力", "路径", "正确的是", "下列说法"])) {
     return {
       training_group: "02-选项边界二选一",
       error_type: "选项边界二选一误判",
@@ -191,10 +346,10 @@ function inferredClassification(question) {
   }
 
   return {
-    training_group: "02-选项边界二选一",
-    error_type: "概念定义边界模糊",
-    wrong_reason: "当前题目没有命中更明确的固定规则，优先按概念边界和选项层级复盘。",
-    next_rule: "把题干限定词逐个对应到选项，发现扩大范围、偷换主体、错换领域就排除。",
+    training_group: "01-材料核心效果判断",
+    error_type: "材料核心效果判断不稳",
+    wrong_reason: "时政材料题通常考核心效果，优先按主体、动作、对象和直接变化复盘。",
+    next_rule: "先把材料压成“谁通过什么动作带来什么变化”，再匹配最贴近的选项。",
     inferred_classification: true,
   };
 }
