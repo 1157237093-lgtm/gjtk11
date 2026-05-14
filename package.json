@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/copy-pdf-worker.mjs && node scripts/build-fixed-import-bundle.mjs && esbuild src/main.js --bundle --format=iife --platform=browser --target=chrome110,safari16 --outfile=app.js",
     "verify-import": "node scripts/verify-import.mjs",
+    "export:obsidian-errors": "node scripts/export-obsidian-error-classification.mjs",
     "electron:start": "electron electron/main.cjs",
     "atlas:file": "bash ./scripts/open-atlas.sh file",
     "atlas:local": "bash ./scripts/open-atlas.sh local",

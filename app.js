@@ -78649,6 +78649,36 @@ ${text.slice(0, 2e3)}`;
     return `${digits[tens]}\u5341${ones ? digits[ones] : ""}`;
   }
 
+  // src/obsidian-error-classification.js
+  var PENDING_CLASSIFICATION = {
+    training_group: "\u5F85\u4EBA\u5DE5\u5224\u65AD",
+    error_type: "\u5F85\u4EBA\u5DE5\u5224\u65AD",
+    wrong_reason: "\u5F85\u4EBA\u5DE5\u5224\u65AD",
+    next_rule: "\u5F85\u4EBA\u5DE5\u8865\u5145"
+  };
+  var manual_classification = {
+    "issue-3-11-28::23": {
+      training_group: "\u6750\u6599\u6620\u5C04\u8BAD\u7EC3",
+      error_type: "\u6750\u6599\u6620\u5C04",
+      wrong_reason: "\u770B\u5230\u201C\u4E3B\u9898\u5C55\u89C8\u3001\u516C\u76CA\u5BA3\u8BB2\u3001\u79D1\u666E\u6D3B\u52A8\u201D\u5BB9\u6613\u60F3\u6210\u201C\u5F62\u5F0F\u521B\u65B0\u201D\uFF0C\u4F46\u9898\u5E72\u91CD\u70B9\u4E0D\u662F\u521B\u65B0\u5F62\u5F0F\uFF0C\u800C\u662F\u6269\u5927\u6559\u80B2\u8986\u76D6\u9762\u3002",
+      next_rule: "\u770B\u5230\u201C\u4F9D\u6258\u9635\u5730\u3001\u9762\u5411\u793E\u4F1A\u3001\u666E\u53CA\u6559\u80B2\u201D\uFF0C\u4F18\u5148\u627E\u201C\u5EF6\u4F38\u94FE\u6761\u3001\u6269\u5927\u8986\u76D6\u3001\u592F\u5B9E\u57FA\u7840\u201D\u3002"
+    }
+  };
+  function questionClassificationKey(question) {
+    return `${String(question?.paperId || "").trim()}::${String(question?.questionNo || "").trim()}`;
+  }
+  function getManualClassification(question) {
+    return manual_classification[questionClassificationKey(question)] || null;
+  }
+  function getObsidianClassification(question) {
+    const manual = getManualClassification(question);
+    return {
+      ...PENDING_CLASSIFICATION,
+      ...manual || {},
+      manual_classification: Boolean(manual)
+    };
+  }
+
   // src/main.js
   var STORAGE_KEY = "staged-question-bank-v1";
   var WRONG_EXPORT_SETTINGS_KEY = "wrong-export-settings-v1";
@@ -84781,6 +84811,7 @@ ${card.typicalMaterial}
       return "# \u5F53\u524D\u7B5B\u9009\u4E0B\u6CA1\u6709\u9519\u9898\n";
     }
     return rows.map((question) => {
+      const classification = getObsidianClassification(question);
       const options = question.options.map((option) => `- ${option.label}. ${option.text}`).join("\n");
       return `## ${question.paperTitle} \xB7 \u7B2C ${question.questionNo} \u9898
 
@@ -84788,6 +84819,11 @@ ${card.typicalMaterial}
 - \u6A21\u5757: ${question.module}
 - \u9898\u578B: ${question.type}
 - \u9519\u56E0: ${question.wrongReason || "\u672A\u6807\u8BB0"}
+- manual_classification: ${classification.manual_classification}
+- training_group: ${classification.training_group}
+- error_type: ${classification.error_type}
+- wrong_reason: ${classification.wrong_reason}
+- next_rule: ${classification.next_rule}
 - \u7528\u6237\u7B54\u6848: ${formatAnswer(question.userAnswer) || "\u672A\u4F5C\u7B54"}
 - \u6B63\u786E\u7B54\u6848: ${formatAnswer(question.correctAnswer) || "\u672A\u5BFC\u5165"}
 - \u66F4\u65B0\u65F6\u95F4: ${question.updatedAt || ""}
@@ -85296,6 +85332,7 @@ ${question.explanation || "\u6682\u65E0\u89E3\u6790"}
     };
   }
   function toWrongQuestionExportItem(question) {
+    const obsidianClassification = getObsidianClassification(question);
     return {
       paperId: question.paperId,
       paperTitle: question.paperTitle,
@@ -85310,6 +85347,11 @@ ${question.explanation || "\u6682\u65E0\u89E3\u6790"}
       userAnswer: question.userAnswer,
       isWrong: question.isWrong,
       wrongReason: question.wrongReason,
+      manual_classification: obsidianClassification.manual_classification,
+      training_group: obsidianClassification.training_group,
+      error_type: obsidianClassification.error_type,
+      wrong_reason: obsidianClassification.wrong_reason,
+      next_rule: obsidianClassification.next_rule,
       riskReasons: getQuestionRiskReasons(question),
       confidenceStatus: question.confidenceStatus,
       hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),

@@ -1,0 +1,13 @@
+{
+  "total": 151,
+  "matchedCount": 1,
+  "pendingCount": 150,
+  "trainingGroupCounts": {
+    "待人工判断": 150,
+    "材料映射训练": 1
+  },
+  "errorTypeCounts": {
+    "待人工判断": 150,
+    "材料映射": 1
+  }
+}

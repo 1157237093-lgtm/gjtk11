@@ -7,6 +7,7 @@ import {
   WRONG_REASONS,
   validateParsedQuestion,
 } from "./parser-core.js";
+import { getObsidianClassification } from "./obsidian-error-classification.js";
 
 const STORAGE_KEY = "staged-question-bank-v1";
 const WRONG_EXPORT_SETTINGS_KEY = "wrong-export-settings-v1";
@@ -7018,6 +7019,7 @@ function toMarkdown(rows) {
 
   return rows
     .map((question) => {
+      const classification = getObsidianClassification(question);
       const options = question.options.map((option) => `- ${option.label}. ${option.text}`).join("\n");
       return `## ${question.paperTitle} · 第 ${question.questionNo} 题
 
@@ -7025,6 +7027,11 @@ function toMarkdown(rows) {
 - 模块: ${question.module}
 - 题型: ${question.type}
 - 错因: ${question.wrongReason || "未标记"}
+- manual_classification: ${classification.manual_classification}
+- training_group: ${classification.training_group}
+- error_type: ${classification.error_type}
+- wrong_reason: ${classification.wrong_reason}
+- next_rule: ${classification.next_rule}
 - 用户答案: ${formatAnswer(question.userAnswer) || "未作答"}
 - 正确答案: ${formatAnswer(question.correctAnswer) || "未导入"}
 - 更新时间: ${question.updatedAt || ""}
@@ -7610,6 +7617,7 @@ function inspectWrongQuestionForJsonExport(question) {
 }
 
 function toWrongQuestionExportItem(question) {
+  const obsidianClassification = getObsidianClassification(question);
   return {
     paperId: question.paperId,
     paperTitle: question.paperTitle,
@@ -7624,6 +7632,11 @@ function toWrongQuestionExportItem(question) {
     userAnswer: question.userAnswer,
     isWrong: question.isWrong,
     wrongReason: question.wrongReason,
+    manual_classification: obsidianClassification.manual_classification,
+    training_group: obsidianClassification.training_group,
+    error_type: obsidianClassification.error_type,
+    wrong_reason: obsidianClassification.wrong_reason,
+    next_rule: obsidianClassification.next_rule,
     riskReasons: getQuestionRiskReasons(question),
     confidenceStatus: question.confidenceStatus,
     hesitationOptions: normalizeAnswerToArray(question.hesitationOptions),

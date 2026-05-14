@@ -51,8 +51,27 @@
 npm install
 npm run build
 npm run verify-import
+npm run export:obsidian-errors -- --input="/path/to/wrong-questions-latest.json" --out=obsidian-error-classification
 npm run electron:start
 ```
+
+## Obsidian 错题错因分类系统
+
+项目内置 `manual_classification` 人工错因映射，位置在 `src/obsidian-error-classification.js`。所有错因分类只从该映射读取，不做自动推断。未匹配到人工映射的题目统一写入：
+
+- `training_group: 待人工判断`
+- `error_type: 待人工判断`
+- `wrong_reason: 待人工判断`
+- `next_rule: 待人工补充`
+
+运行 `npm run export:obsidian-errors -- --input="/path/to/wrong-questions-latest.json" --out=obsidian-error-classification` 会生成：
+
+- `obsidian-error-classification/题目/`：每道错题一个独立 Markdown 文件。
+- `obsidian-error-classification/02-错因分类索引.md`：按错因训练组归档。
+- `obsidian-error-classification/七组轮换训练看板.md`：七组轮换训练入口。
+- `obsidian-error-classification/导出统计.md` 和 `export-stats.json`：匹配与待人工判断统计。
+
+导出脚本只追加 Obsidian frontmatter 和复盘字段，不删除原题、选项、答案、解析，也不改写题干原文。
 
 ## 固定导入包
 
